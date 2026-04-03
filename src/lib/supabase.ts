@@ -1,2 +1,2 @@
-export const SUPABASE_URL = 'https://your-project.supabase.co';
-export const SUPABASE_ANON_KEY = 'your-anon-key';
+export const SUPABASE_URL = 'https://dpqgagiwqxqhfusoppzi.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwcWdhZ2l3cXhxaGZ1c29wcHppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMjczMTUsImV4cCI6MjA5MDgwMzMxNX0.8vsLq_rY3aA_F_cpKCpfh8wDdz5LbCHMVl7BfpElmTU';
