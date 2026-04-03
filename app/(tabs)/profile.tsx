@@ -6,6 +6,7 @@ import { APP_COLORS, BRANCHES } from '../../src/constants';
 export default function ProfileScreen() {
   const router = useRouter();
   const isLoggedIn = false;
+  const unreadCount = 2;
 
   if (!isLoggedIn) {
     return (
@@ -56,14 +57,19 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="information-circle" size={22} color={APP_COLORS.textSecondary} />
-          <Text style={styles.menuItemText}>About Us</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/settings')}>
+          <Ionicons name="settings-outline" size={22} color={APP_COLORS.textSecondary} />
+          <Text style={styles.menuItemText}>Settings</Text>
           <Ionicons name="chevron-forward" size={20} color={APP_COLORS.textSecondary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="call" size={22} color={APP_COLORS.textSecondary} />
-          <Text style={styles.menuItemText}>Contact Us</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/notifications')}>
+          <Ionicons name="notifications" size={22} color={APP_COLORS.textSecondary} />
+          <Text style={styles.menuItemText}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.notifBadge}>
+              <Text style={styles.notifBadgeText}>{unreadCount}</Text>
+            </View>
+          )}
           <Ionicons name="chevron-forward" size={20} color={APP_COLORS.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
@@ -147,6 +153,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   menuItemText: { flex: 1, fontSize: 15, color: APP_COLORS.text },
+  notifBadge: { backgroundColor: APP_COLORS.primary, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4 },
+  notifBadgeText: { color: '#FFF', fontSize: 11, fontWeight: '700' },
   branches: { paddingHorizontal: 20, marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text, marginBottom: 12 },
   branchCard: {
