@@ -252,6 +252,7 @@ const styles = StyleSheet.create({
   heroImage: { width: 100, height: 100, borderRadius: 16 },
   categoryImage: { width: 64, height: 64, borderRadius: 16 },
   section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: APP_COLORS.text, marginBottom: 12 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   seeAll: { color: APP_COLORS.primary, fontSize: 14, fontWeight: '600' },
   categoriesScroll: { flexDirection: 'row' },
