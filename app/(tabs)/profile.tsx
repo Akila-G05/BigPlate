@@ -1,14 +1,24 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS, BRANCHES } from '../../src/constants';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const isLoggedIn = false;
+  const { user, signOut } = useAuth();
   const unreadCount = 2;
 
-  if (!isLoggedIn) {
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
+  };
+
+  if (!user) {
     return (
       <View style={styles.container}>
         <View style={styles.authPrompt}>
@@ -28,14 +38,18 @@ export default function ProfileScreen() {
     );
   }
 
+  const displayName = user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+  const displayEmail = user.email || '';
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>BP</Text>
+          <Text style={styles.avatarText}>{initials}</Text>
         </View>
-        <Text style={styles.name}>Big Plate Customer</Text>
-        <Text style={styles.email}>customer@email.com</Text>
+        <Text style={styles.name}>{displayName}</Text>
+        <Text style={styles.email}>{displayEmail}</Text>
       </View>
 
       <View style={styles.section}>
@@ -92,7 +106,7 @@ export default function ProfileScreen() {
         ))}
       </View>
 
-      <TouchableOpacity style={styles.logoutButton}>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
         <Ionicons name="log-out" size={20} color={APP_COLORS.primary} />
         <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>

@@ -9,13 +9,16 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { signUp } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -25,7 +28,7 @@ export default function SignupScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter your name');
       return;
@@ -48,11 +51,15 @@ export default function SignupScreen() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert('Success', 'Account created! (Demo mode)');
+    try {
+      await signUp(name, email, phone, password);
+      Alert.alert('Success', 'Account created! You can now sign in.');
       router.replace('/(tabs)');
-    }, 1500);
+    } catch (error: any) {
+      Alert.alert('Signup Failed', error.message || 'Could not create account');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
