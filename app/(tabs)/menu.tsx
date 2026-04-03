@@ -6,24 +6,26 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS, CATEGORIES } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
 import type { MenuItem } from '../../src/types';
+import { FOOD_IMAGES } from '../../src/types';
 
 const ALL_ITEMS: MenuItem[] = [
-  { id: '1', name: 'Tower Burger', description: 'Massive stacked burger with premium toppings', price: 3100, image: '🍔', category_id: 'burgers', is_trending: true },
-  { id: '2', name: 'Beef Burger', description: 'Classic beef burger with special sauce', price: 850, image: '🍔', category_id: 'burgers', is_trending: true, discount: 20 },
-  { id: '3', name: 'Chicken Submarine', description: 'Loaded chicken sub with fresh veggies', price: 1200, image: '🥪', category_id: 'subs', is_trending: true, is_new: true },
-  { id: '4', name: 'Devilled Chicken', description: 'Spicy Indo-Chinese devilled chicken', price: 1100, image: '🍗', category_id: 'chinese', is_trending: true },
-  { id: '5', name: 'Chicken Fried Rice', description: 'Wok-fried rice with chicken and vegetables', price: 950, image: '🍚', category_id: 'rice', is_trending: false },
-  { id: '6', name: 'Chicken Biryani', description: 'Aromatic basmati rice with spiced chicken', price: 1050, image: '🍛', category_id: 'indian', is_trending: false },
-  { id: '7', name: 'Chicken Kottu', description: 'Chopped roti with chicken and spices', price: 900, image: '🫓', category_id: 'kottu', is_trending: false },
-  { id: '8', name: 'Garlic Naan', description: 'Fresh baked garlic naan bread', price: 350, image: '🫓', category_id: 'indian', is_trending: false },
-  { id: '9', name: 'Chilli Beef', description: 'Spicy stir-fried beef with peppers', price: 1200, image: '🥩', category_id: 'chinese', is_trending: false },
-  { id: '10', name: 'Mango Lassi', description: 'Creamy yogurt mango smoothie', price: 450, image: '🥤', category_id: 'drinks', is_trending: false },
+  { id: '1', name: 'Tower Burger', description: 'Massive stacked burger with premium toppings', price: 3100, image: FOOD_IMAGES.burger, category_id: 'burgers', is_trending: true },
+  { id: '2', name: 'Beef Burger', description: 'Classic beef burger with special sauce', price: 850, image: FOOD_IMAGES.beef_burger, category_id: 'burgers', is_trending: true, discount: 20 },
+  { id: '3', name: 'Chicken Submarine', description: 'Loaded chicken sub with fresh veggies', price: 1200, image: FOOD_IMAGES.sub, category_id: 'subs', is_trending: true, is_new: true },
+  { id: '4', name: 'Devilled Chicken', description: 'Spicy Indo-Chinese devilled chicken', price: 1100, image: FOOD_IMAGES.devilled_chicken, category_id: 'chinese', is_trending: true },
+  { id: '5', name: 'Chicken Fried Rice', description: 'Wok-fried rice with chicken and vegetables', price: 950, image: FOOD_IMAGES.fried_rice, category_id: 'rice', is_trending: false },
+  { id: '6', name: 'Chicken Biryani', description: 'Aromatic basmati rice with spiced chicken', price: 1050, image: FOOD_IMAGES.biryani, category_id: 'indian', is_trending: false },
+  { id: '7', name: 'Chicken Kottu', description: 'Chopped roti with chicken and spices', price: 900, image: FOOD_IMAGES.kottu, category_id: 'kottu', is_trending: false },
+  { id: '8', name: 'Garlic Naan', description: 'Fresh baked garlic naan bread', price: 350, image: FOOD_IMAGES.naan, category_id: 'indian', is_trending: false },
+  { id: '9', name: 'Chilli Beef', description: 'Spicy stir-fried beef with peppers', price: 1200, image: FOOD_IMAGES.chilli_beef, category_id: 'chinese', is_trending: false },
+  { id: '10', name: 'Mango Lassi', description: 'Creamy yogurt mango smoothie', price: 450, image: FOOD_IMAGES.lassi, category_id: 'drinks', is_trending: false },
 ];
 
 export default function MenuScreen() {
@@ -40,7 +42,6 @@ export default function MenuScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Search */}
       <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color={APP_COLORS.textSecondary} />
         <TextInput
@@ -57,7 +58,6 @@ export default function MenuScreen() {
         )}
       </View>
 
-      {/* Category Filter */}
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -74,7 +74,7 @@ export default function MenuScreen() {
               setSelectedCategory(selectedCategory === item.id ? null : item.id)
             }
           >
-            <Text style={{ fontSize: 16, marginRight: 4 }}>{item.image}</Text>
+            <Image source={{ uri: item.image }} style={styles.categoryChipImage} />
             <Text
               style={[
                 styles.categoryText,
@@ -87,7 +87,6 @@ export default function MenuScreen() {
         )}
       />
 
-      {/* Menu Items */}
       <FlatList
         data={filteredItems}
         keyExtractor={(item) => item.id}
@@ -95,7 +94,7 @@ export default function MenuScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={{ fontSize: 48 }}>🍽️</Text>
+            <Ionicons name="restaurant-outline" size={48} color={APP_COLORS.textSecondary} />
             <Text style={styles.emptyText}>No items found</Text>
           </View>
         }
@@ -117,9 +116,7 @@ export default function MenuScreen() {
               })
             }
           >
-            <View style={styles.itemImage}>
-              <Text style={{ fontSize: 40 }}>{item.image}</Text>
-            </View>
+            <Image source={{ uri: item.image }} style={styles.itemImage} />
             <View style={styles.itemInfo}>
               <Text style={styles.itemName}>{item.name}</Text>
               <Text style={styles.itemDesc} numberOfLines={2}>{item.description}</Text>
@@ -163,8 +160,8 @@ const styles = StyleSheet.create({
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 20,
     backgroundColor: '#FFF',
     borderWidth: 1,
@@ -174,6 +171,12 @@ const styles = StyleSheet.create({
   categoryChipActive: {
     backgroundColor: APP_COLORS.primary,
     borderColor: APP_COLORS.primary,
+  },
+  categoryChipImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 6,
   },
   categoryText: { fontSize: 13, color: APP_COLORS.textSecondary },
   categoryTextActive: { color: '#FFF', fontWeight: '600' },
@@ -188,12 +191,9 @@ const styles = StyleSheet.create({
     borderColor: APP_COLORS.border,
   },
   itemImage: {
-    width: 70,
-    height: 70,
-    backgroundColor: '#F9FAFB',
+    width: 80,
+    height: 80,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   itemInfo: { flex: 1, marginLeft: 12, justifyContent: 'space-between' },
   itemName: { fontSize: 16, fontWeight: '600', color: APP_COLORS.text },

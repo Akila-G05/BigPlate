@@ -66,7 +66,10 @@ export default function SignupScreen() {
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.logoEmoji}>🍽️</Text>
+          <Image
+            source={{ uri: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&h=200&fit=crop' }}
+            style={styles.logoImage}
+          />
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Join Big Plate for delicious food delivery</Text>
         </View>
@@ -188,7 +191,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 24, paddingTop: 60, paddingBottom: 40 },
   backButton: { alignSelf: 'flex-start', padding: 8, marginBottom: 24 },
   header: { alignItems: 'center', marginBottom: 32 },
-  logoEmoji: { fontSize: 56, marginBottom: 16 },
+  logoImage: { width: 80, height: 80, borderRadius: 40, marginBottom: 16 },
   title: { fontSize: 28, fontWeight: '800', color: APP_COLORS.text },
   subtitle: { fontSize: 15, color: APP_COLORS.textSecondary, marginTop: 8 },
   form: { width: '100%' },

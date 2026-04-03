@@ -11,7 +11,7 @@ export default function ProfileScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.authPrompt}>
-          <Text style={{ fontSize: 64 }}>👤</Text>
+          <Ionicons name="person-circle-outline" size={64} color={APP_COLORS.textSecondary} />
           <Text style={styles.authTitle}>Sign in to your account</Text>
           <Text style={styles.authSubtitle}>
             Track orders, save addresses, and get exclusive deals

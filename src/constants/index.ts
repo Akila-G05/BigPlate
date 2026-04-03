@@ -1,12 +1,12 @@
 export const CATEGORIES = [
-  { id: 'burgers', name: 'Burgers', image: '🍔' },
-  { id: 'subs', name: 'Subs', image: '🥪' },
-  { id: 'rice', name: 'Rice & Curry', image: '🍛' },
-  { id: 'chinese', name: 'Chinese', image: '🥡' },
-  { id: 'arabic', name: 'Arabic', image: '🧆' },
-  { id: 'indian', name: 'Indian', image: '🍲' },
-  { id: 'kottu', name: 'Kottu', image: '🫓' },
-  { id: 'drinks', name: 'Drinks', image: '🥤' },
+  { id: 'burgers', name: 'Burgers', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&h=200&fit=crop' },
+  { id: 'subs', name: 'Subs', image: 'https://images.unsplash.com/photo-1553909489-cd47e0907980?w=200&h=200&fit=crop' },
+  { id: 'rice', name: 'Rice & Curry', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=200&h=200&fit=crop' },
+  { id: 'chinese', name: 'Chinese', image: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=200&h=200&fit=crop' },
+  { id: 'arabic', name: 'Arabic', image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=200&h=200&fit=crop' },
+  { id: 'indian', name: 'Indian', image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=200&h=200&fit=crop' },
+  { id: 'kottu', name: 'Kottu', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=200&h=200&fit=crop' },
+  { id: 'drinks', name: 'Drinks', image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=200&h=200&fit=crop' },
 ];
 
 export const BRANCHES = [

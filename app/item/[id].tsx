@@ -57,9 +57,7 @@ export default function ItemDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Image */}
-        <View style={styles.imageContainer}>
-          <Text style={styles.imageEmoji}>{item.image}</Text>
-        </View>
+        <Image source={{ uri: item.image }} style={styles.itemDetailImage} />
 
         {/* Info */}
         <View style={styles.infoSection}>
@@ -150,13 +148,10 @@ const styles = StyleSheet.create({
   backButton: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
   scrollContent: { paddingBottom: 100 },
-  imageContainer: {
-    height: 220,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
+  itemDetailImage: {
+    width: '100%',
+    height: 280,
   },
-  imageEmoji: { fontSize: 100 },
   infoSection: { padding: 20 },
   itemName: { fontSize: 24, fontWeight: '800', color: APP_COLORS.text },
   tagsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },

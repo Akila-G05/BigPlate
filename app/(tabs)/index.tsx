@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS, CATEGORIES } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
 import type { MenuItem } from '../../src/types';
+import { FOOD_IMAGES } from '../../src/types';
 
 const { width } = Dimensions.get('window');
 
@@ -23,7 +24,7 @@ const TRENDING_ITEMS: MenuItem[] = [
     name: 'Tower Burger',
     description: 'Massive stacked burger with premium toppings',
     price: 3100,
-    image: '🍔',
+    image: FOOD_IMAGES.burger,
     category_id: 'burgers',
     is_trending: true,
   },
@@ -32,7 +33,7 @@ const TRENDING_ITEMS: MenuItem[] = [
     name: 'Devilled Chicken',
     description: 'Spicy Indo-Chinese devilled chicken',
     price: 1100,
-    image: '🍗',
+    image: FOOD_IMAGES.devilled_chicken,
     category_id: 'chinese',
     is_trending: true,
   },
@@ -41,7 +42,7 @@ const TRENDING_ITEMS: MenuItem[] = [
     name: 'Chicken Submarine',
     description: 'Loaded chicken sub with fresh veggies',
     price: 1200,
-    image: '🥪',
+    image: FOOD_IMAGES.sub,
     category_id: 'subs',
     is_trending: true,
     is_new: true,
@@ -51,7 +52,7 @@ const TRENDING_ITEMS: MenuItem[] = [
     name: 'Beef Burger',
     description: 'Classic beef burger with special sauce',
     price: 850,
-    image: '🍔',
+    image: FOOD_IMAGES.beef_burger,
     category_id: 'burgers',
     is_trending: true,
     discount: 20,
@@ -97,7 +98,10 @@ export default function HomeScreen() {
               <Text style={styles.heroButtonText}>Order Now</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.heroEmoji}>🍔</Text>
+          <Image
+            source={{ uri: FOOD_IMAGES.burger }}
+            style={styles.heroImage}
+          />
         </View>
 
         {/* Categories */}
@@ -106,9 +110,7 @@ export default function HomeScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
             {CATEGORIES.map((cat) => (
               <TouchableOpacity key={cat.id} style={styles.categoryItem}>
-                <View style={styles.categoryIcon}>
-                  <Text style={{ fontSize: 28 }}>{cat.image}</Text>
-                </View>
+                <Image source={{ uri: cat.image }} style={styles.categoryImage} />
                 <Text style={styles.categoryName}>{cat.name}</Text>
               </TouchableOpacity>
             ))}
@@ -118,7 +120,7 @@ export default function HomeScreen() {
         {/* Trending */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Trending Now 🔥</Text>
+            <Text style={styles.sectionTitle}>Trending Now</Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/menu')}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
@@ -130,9 +132,7 @@ export default function HomeScreen() {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.trendingCard}>
-                <View style={styles.trendingImage}>
-                  <Text style={{ fontSize: 40 }}>{item.image}</Text>
-                </View>
+                <Image source={{ uri: item.image }} style={styles.trendingImage} />
                 <View style={styles.trendingInfo}>
                   <Text style={styles.trendingName} numberOfLines={1}>{item.name}</Text>
                   <Text style={styles.trendingPrice}>Rs. {item.price.toLocaleString()}</Text>
@@ -177,6 +177,21 @@ export default function HomeScreen() {
             <Text style={styles.infoLabel}>Menu Items</Text>
           </View>
         </View>
+
+        {/* Promotions Banner */}
+        <TouchableOpacity
+          style={styles.promoBanner}
+          onPress={() => router.push('/promotions')}
+        >
+          <View style={styles.promoIcon}>
+            <Ionicons name="gift" size={28} color="#FFF" />
+          </View>
+          <View style={styles.promoInfo}>
+            <Text style={styles.promoTitle}>Special Offers!</Text>
+            <Text style={styles.promoSubtitle}>Get up to 25% off on your order</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#FFF" />
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -230,22 +245,17 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   heroButtonText: { color: APP_COLORS.primary, fontWeight: '700', fontSize: 14 },
-  heroEmoji: { fontSize: 64 },
+  heroImage: { width: 100, height: 100, borderRadius: 16 },
   section: { paddingHorizontal: 20, marginBottom: 24 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 20, fontWeight: '700', color: APP_COLORS.text, marginBottom: 12 },
   seeAll: { color: APP_COLORS.primary, fontSize: 14, fontWeight: '600' },
   categoriesScroll: { flexDirection: 'row' },
   categoryItem: { alignItems: 'center', marginRight: 16 },
-  categoryIcon: {
+  categoryImage: {
     width: 64,
     height: 64,
     borderRadius: 16,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: APP_COLORS.border,
   },
   categoryName: { marginTop: 6, fontSize: 12, color: APP_COLORS.textSecondary },
   trendingCard: {
@@ -259,10 +269,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   trendingImage: {
-    height: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    width: '100%',
+    height: 100,
     borderRadius: 12,
     marginBottom: 8,
   },
@@ -316,4 +324,25 @@ const styles = StyleSheet.create({
   },
   infoValue: { fontSize: 20, fontWeight: '800', color: APP_COLORS.text, marginTop: 8 },
   infoLabel: { fontSize: 11, color: APP_COLORS.textSecondary, textAlign: 'center' },
+  promoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: APP_COLORS.primaryDark,
+    marginHorizontal: 20,
+    marginBottom: 24,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  promoIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  promoInfo: { flex: 1 },
+  promoTitle: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  promoSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
 });

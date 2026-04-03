@@ -12,7 +12,7 @@ export default function CartScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.empty}>
-          <Text style={{ fontSize: 64 }}>🛒</Text>
+          <Ionicons name="cart-outline" size={64} color={APP_COLORS.textSecondary} />
           <Text style={styles.emptyTitle}>Your cart is empty</Text>
           <Text style={styles.emptySubtitle}>Add items from the menu to get started</Text>
           <TouchableOpacity
@@ -41,9 +41,7 @@ export default function CartScreen() {
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <View style={styles.cartItem}>
-            <View style={styles.itemImage}>
-              <Text style={{ fontSize: 32 }}>{item.menu_item.image}</Text>
-            </View>
+            <Image source={{ uri: item.menu_item.image }} style={styles.itemImage} />
             <View style={styles.itemInfo}>
               <Text style={styles.itemName}>{item.menu_item.name}</Text>
               <Text style={styles.itemPrice}>Rs. {(item.menu_item.price * item.quantity).toLocaleString()}</Text>
@@ -107,10 +105,7 @@ const styles = StyleSheet.create({
   itemImage: {
     width: 56,
     height: 56,
-    backgroundColor: '#F9FAFB',
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   itemInfo: { flex: 1, marginLeft: 12 },
   itemName: { fontSize: 15, fontWeight: '600', color: APP_COLORS.text },
