@@ -251,6 +251,11 @@ const styles = StyleSheet.create({
   heroButtonText: { color: APP_COLORS.primary, fontWeight: '700', fontSize: 14 },
   heroImage: { width: 100, height: 100, borderRadius: 16 },
   categoryImage: { width: 64, height: 64, borderRadius: 16 },
+  section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  seeAll: { color: APP_COLORS.primary, fontSize: 14, fontWeight: '600' },
+  categoriesScroll: { flexDirection: 'row' },
+  categoryItem: { alignItems: 'center', marginRight: 16 },
   categoryName: { marginTop: 6, fontSize: 12, color: APP_COLORS.textSecondary },
   trendingCard: {
     width: 180,
@@ -269,6 +274,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   trendingName: { fontSize: 14, fontWeight: '600', color: APP_COLORS.text },
+  trendingInfo: { marginTop: 4 },
   trendingPrice: { fontSize: 16, fontWeight: '700', color: APP_COLORS.primary, marginTop: 4 },
   addButton: {
     flexDirection: 'row',
