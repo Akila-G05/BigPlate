@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
@@ -45,6 +45,12 @@ export default function OrdersScreen() {
   const router = useRouter();
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [activeOrder, setActiveOrder] = useState(MOCK_ORDERS[0]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
 
   const activeOrders = MOCK_ORDERS.filter((o) => o.status !== 'delivered');
   const pastOrders = MOCK_ORDERS.filter((o) => o.status === 'delivered');
@@ -73,7 +79,7 @@ export default function OrdersScreen() {
         <Text style={styles.headerTitle}>My Orders</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[APP_COLORS.primary]} tintColor={APP_COLORS.primary} />}>
         {/* Active Order Tracking */}
         {activeOrders.length > 0 && (
           <View style={styles.section}>

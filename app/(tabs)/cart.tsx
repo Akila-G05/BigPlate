@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
+import { FoodImage } from '../../src/components/FoodImage';
 
 export default function CartScreen() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function CartScreen() {
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <View style={styles.cartItem}>
-            <Image source={{ uri: item.menu_item.image }} style={styles.itemImage} />
+            <FoodImage uri={item.menu_item.image} size={56} borderRadius={12} style={styles.itemImage} />
             <View style={styles.itemInfo}>
               <Text style={styles.itemName}>{item.menu_item.name}</Text>
               <Text style={styles.itemPrice}>Rs. {(item.menu_item.price * item.quantity).toLocaleString()}</Text>

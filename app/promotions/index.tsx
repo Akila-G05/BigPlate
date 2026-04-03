@@ -1,7 +1,8 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
+import { FoodImage } from '../../src/components/FoodImage';
 
 const PROMOTIONS = [
   {
@@ -59,7 +60,7 @@ export default function PromotionsScreen() {
 
         {PROMOTIONS.map((promo) => (
           <View key={promo.id} style={styles.promoCard}>
-            <Image source={{ uri: promo.image }} style={styles.promoImage} />
+            <FoodImage uri={promo.image} size={400} borderRadius={0} style={styles.promoImage} />
             <View style={styles.promoContent}>
               <View style={styles.promoHeader}>
                 <Text style={styles.promoTitle}>{promo.title}</Text>

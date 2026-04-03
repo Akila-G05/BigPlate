@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { APP_COLORS } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
+import { FoodImage } from '../../src/components/FoodImage';
 
 const ITEM_DETAILS: Record<string, { description: string; spice: string; prepTime: string; tags: string[] }> = {
   '1': { description: 'Our signature massive stacked burger with premium toppings, special sauce, and fresh ingredients. This is the ultimate burger experience.', spice: 'Mild', prepTime: '15-20 min', tags: ['Beef', 'Signature', 'Bestseller'] },
@@ -57,7 +58,7 @@ export default function ItemDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Image */}
-        <Image source={{ uri: item.image }} style={styles.itemDetailImage} />
+        <FoodImage uri={item.image} size={300} borderRadius={0} style={styles.itemDetailImage} />
 
         {/* Info */}
         <View style={styles.infoSection}>

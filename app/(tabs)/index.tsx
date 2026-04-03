@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   FlatList,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ import { APP_COLORS, CATEGORIES } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
 import type { MenuItem } from '../../src/types';
 import { FOOD_IMAGES } from '../../src/types';
+import { FoodImage } from '../../src/components/FoodImage';
 
 const { width } = Dimensions.get('window');
 
@@ -63,6 +64,12 @@ export default function HomeScreen() {
   const router = useRouter();
   const { addToCart, itemCount } = useCart();
   const [selectedBranch, setSelectedBranch] = useState('Colombo 03');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -85,7 +92,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[APP_COLORS.primary]} tintColor={APP_COLORS.primary} />}>
         {/* Hero Banner */}
         <View style={styles.heroBanner}>
           <View style={styles.heroContent}>
@@ -98,10 +105,7 @@ export default function HomeScreen() {
               <Text style={styles.heroButtonText}>Order Now</Text>
             </TouchableOpacity>
           </View>
-          <Image
-            source={{ uri: FOOD_IMAGES.burger }}
-            style={styles.heroImage}
-          />
+          <FoodImage uri={FOOD_IMAGES.burger} size={100} borderRadius={16} />
         </View>
 
         {/* Categories */}
@@ -110,7 +114,7 @@ export default function HomeScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
             {CATEGORIES.map((cat) => (
               <TouchableOpacity key={cat.id} style={styles.categoryItem}>
-                <Image source={{ uri: cat.image }} style={styles.categoryImage} />
+                <FoodImage uri={cat.image} size={64} borderRadius={16} />
                 <Text style={styles.categoryName}>{cat.name}</Text>
               </TouchableOpacity>
             ))}
@@ -131,8 +135,8 @@ export default function HomeScreen() {
             data={TRENDING_ITEMS}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.trendingCard}>
-                <Image source={{ uri: item.image }} style={styles.trendingImage} />
+              <TouchableOpacity key={item.id} style={styles.trendingCard}>
+                <FoodImage uri={item.image} size={160} borderRadius={12} style={styles.trendingImage} />
                 <View style={styles.trendingInfo}>
                   <Text style={styles.trendingName} numberOfLines={1}>{item.name}</Text>
                   <Text style={styles.trendingPrice}>Rs. {item.price.toLocaleString()}</Text>
@@ -246,17 +250,8 @@ const styles = StyleSheet.create({
   },
   heroButtonText: { color: APP_COLORS.primary, fontWeight: '700', fontSize: 14 },
   heroImage: { width: 100, height: 100, borderRadius: 16 },
-  section: { paddingHorizontal: 20, marginBottom: 24 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', color: APP_COLORS.text, marginBottom: 12 },
-  seeAll: { color: APP_COLORS.primary, fontSize: 14, fontWeight: '600' },
-  categoriesScroll: { flexDirection: 'row' },
-  categoryItem: { alignItems: 'center', marginRight: 16 },
-  categoryImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-  },
+  categoryImage: { width: 64, height: 64, borderRadius: 16 },
+  trendingImage: { width: '100%', height: 100, marginBottom: 8 },
   categoryName: { marginTop: 6, fontSize: 12, color: APP_COLORS.textSecondary },
   trendingCard: {
     width: 180,

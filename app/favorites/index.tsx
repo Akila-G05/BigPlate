@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { FOOD_IMAGES } from '../../src/types';
+import { FoodImage } from '../../src/components/FoodImage';
 
 const FAVORITES = [
   { id: '1', name: 'Tower Burger', price: 3100, image: FOOD_IMAGES.burger, category: 'Burgers' },
@@ -67,7 +68,7 @@ export default function FavoritesScreen() {
               })
             }
           >
-            <Image source={{ uri: item.image }} style={styles.favImage} />
+            <FoodImage uri={item.image} size={70} borderRadius={12} />
             <View style={styles.favInfo}>
               <Text style={styles.favName}>{item.name}</Text>
               <Text style={styles.favCategory}>{item.category}</Text>

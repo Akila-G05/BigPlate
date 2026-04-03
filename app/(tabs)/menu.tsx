@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,8 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  Image,
+  RefreshControl,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +15,7 @@ import { APP_COLORS, CATEGORIES } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
 import type { MenuItem } from '../../src/types';
 import { FOOD_IMAGES } from '../../src/types';
+import { FoodImage } from '../../src/components/FoodImage';
 
 const ALL_ITEMS: MenuItem[] = [
   { id: '1', name: 'Tower Burger', description: 'Massive stacked burger with premium toppings', price: 3100, image: FOOD_IMAGES.burger, category_id: 'burgers', is_trending: true },
@@ -28,11 +30,77 @@ const ALL_ITEMS: MenuItem[] = [
   { id: '10', name: 'Mango Lassi', description: 'Creamy yogurt mango smoothie', price: 450, image: FOOD_IMAGES.lassi, category_id: 'drinks', is_trending: false },
 ];
 
+function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; index: number; router: any; addToCart: (item: MenuItem) => void }) {
+  const anim = useState(new Animated.Value(0))[0];
+
+  useState(() => {
+    Animated.spring(anim, {
+      toValue: 1,
+      delay: index * 80,
+      useNativeDriver: true,
+      tension: 50,
+      friction: 7,
+    }).start();
+  });
+
+  return (
+    <Animated.View
+      style={{
+        opacity: anim,
+        transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
+      }}
+    >
+      <TouchableOpacity
+        style={styles.itemCard}
+        onPress={() =>
+          router.push({
+            pathname: '/item/[id]',
+            params: {
+              id: item.id,
+              name: item.name,
+              description: item.description,
+              price: item.price.toString(),
+              image: item.image,
+              category_id: item.category_id,
+              is_trending: item.is_trending.toString(),
+            },
+          })
+        }
+      >
+        <FoodImage uri={item.image} size={80} borderRadius={12} />
+        <View style={styles.itemInfo}>
+          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemDesc} numberOfLines={2}>{item.description}</Text>
+          <View style={styles.itemFooter}>
+            <Text style={styles.itemPrice}>Rs. {item.price.toLocaleString()}</Text>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                addToCart(item);
+              }}
+            >
+              <Ionicons name="add" size={18} color="#FFF" />
+              <Text style={styles.addButtonText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 export default function MenuScreen() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
   const { addToCart } = useCart();
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
 
   const filteredItems = ALL_ITEMS.filter((item) => {
     const matchCategory = selectedCategory ? item.category_id === selectedCategory : true;
@@ -74,7 +142,7 @@ export default function MenuScreen() {
               setSelectedCategory(selectedCategory === item.id ? null : item.id)
             }
           >
-            <Image source={{ uri: item.image }} style={styles.categoryChipImage} />
+            <FoodImage uri={item.image} size={24} borderRadius={12} style={styles.categoryChipImage} />
             <Text
               style={[
                 styles.categoryText,
@@ -92,49 +160,27 @@ export default function MenuScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[APP_COLORS.primary]}
+            tintColor={APP_COLORS.primary}
+          />
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="restaurant-outline" size={48} color={APP_COLORS.textSecondary} />
             <Text style={styles.emptyText}>No items found</Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.itemCard}
-            onPress={() =>
-              router.push({
-                pathname: '/item/[id]',
-                params: {
-                  id: item.id,
-                  name: item.name,
-                  description: item.description,
-                  price: item.price.toString(),
-                  image: item.image,
-                  category_id: item.category_id,
-                  is_trending: item.is_trending.toString(),
-                },
-              })
-            }
-          >
-            <Image source={{ uri: item.image }} style={styles.itemImage} />
-            <View style={styles.itemInfo}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemDesc} numberOfLines={2}>{item.description}</Text>
-              <View style={styles.itemFooter}>
-                <Text style={styles.itemPrice}>Rs. {item.price.toLocaleString()}</Text>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    addToCart(item);
-                  }}
-                >
-                  <Ionicons name="add" size={18} color="#FFF" />
-                  <Text style={styles.addButtonText}>Add</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
+        renderItem={({ item, index }) => (
+          <AnimatedItemCard
+            item={item}
+            index={index}
+            router={router}
+            addToCart={addToCart}
+          />
         )}
       />
     </View>
@@ -172,12 +218,7 @@ const styles = StyleSheet.create({
     backgroundColor: APP_COLORS.primary,
     borderColor: APP_COLORS.primary,
   },
-  categoryChipImage: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginRight: 6,
-  },
+  categoryChipImage: { marginRight: 6, overflow: 'hidden' },
   categoryText: { fontSize: 13, color: APP_COLORS.textSecondary },
   categoryTextActive: { color: '#FFF', fontWeight: '600' },
   list: { paddingHorizontal: 20, paddingBottom: 100 },
@@ -189,11 +230,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: APP_COLORS.border,
-  },
-  itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
   },
   itemInfo: { flex: 1, marginLeft: 12, justifyContent: 'space-between' },
   itemName: { fontSize: 16, fontWeight: '600', color: APP_COLORS.text },
