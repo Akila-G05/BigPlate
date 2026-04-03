@@ -38,17 +38,17 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/address')}>
           <Ionicons name="location" size={22} color={APP_COLORS.primary} />
           <Text style={styles.menuItemText}>My Addresses</Text>
           <Ionicons name="chevron-forward" size={20} color={APP_COLORS.textSecondary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/favorites')}>
           <Ionicons name="heart" size={22} color={APP_COLORS.primary} />
           <Text style={styles.menuItemText}>Favorites</Text>
           <Ionicons name="chevron-forward" size={20} color={APP_COLORS.textSecondary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/promotions')}>
           <Ionicons name="gift" size={22} color={APP_COLORS.primary} />
           <Text style={styles.menuItemText}>Promotions</Text>
           <Ionicons name="chevron-forward" size={20} color={APP_COLORS.textSecondary} />
