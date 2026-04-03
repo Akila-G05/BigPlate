@@ -1,0 +1,319 @@
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  Dimensions,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { APP_COLORS, CATEGORIES } from '../../src/constants';
+import { useCart } from '../../src/context/CartContext';
+import type { MenuItem } from '../../src/types';
+
+const { width } = Dimensions.get('window');
+
+const TRENDING_ITEMS: MenuItem[] = [
+  {
+    id: '1',
+    name: 'Tower Burger',
+    description: 'Massive stacked burger with premium toppings',
+    price: 3100,
+    image: '🍔',
+    category_id: 'burgers',
+    is_trending: true,
+  },
+  {
+    id: '2',
+    name: 'Devilled Chicken',
+    description: 'Spicy Indo-Chinese devilled chicken',
+    price: 1100,
+    image: '🍗',
+    category_id: 'chinese',
+    is_trending: true,
+  },
+  {
+    id: '3',
+    name: 'Chicken Submarine',
+    description: 'Loaded chicken sub with fresh veggies',
+    price: 1200,
+    image: '🥪',
+    category_id: 'subs',
+    is_trending: true,
+    is_new: true,
+  },
+  {
+    id: '4',
+    name: 'Beef Burger',
+    description: 'Classic beef burger with special sauce',
+    price: 850,
+    image: '🍔',
+    category_id: 'burgers',
+    is_trending: true,
+    discount: 20,
+  },
+];
+
+export default function HomeScreen() {
+  const router = useRouter();
+  const { addToCart, itemCount } = useCart();
+  const [selectedBranch, setSelectedBranch] = useState('Colombo 03');
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Deliver to</Text>
+          <TouchableOpacity style={styles.branchSelector}>
+            <Text style={styles.branchName}>{selectedBranch}</Text>
+            <Ionicons name="chevron-down" size={16} color={APP_COLORS.primary} />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity style={styles.cartButton} onPress={() => router.push('/(tabs)/cart')}>
+          <Ionicons name="cart-outline" size={24} color={APP_COLORS.text} />
+          {itemCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{itemCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Hero Banner */}
+        <View style={styles.heroBanner}>
+          <View style={styles.heroContent}>
+            <Text style={styles.heroTitle}>Delicious Food,{'\n'}Delivered Fast</Text>
+            <Text style={styles.heroSubtitle}>Indian, Chinese, Arabic & Western cuisines</Text>
+            <TouchableOpacity
+              style={styles.heroButton}
+              onPress={() => router.push('/(tabs)/menu')}
+            >
+              <Text style={styles.heroButtonText}>Order Now</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.heroEmoji}>🍔</Text>
+        </View>
+
+        {/* Categories */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity key={cat.id} style={styles.categoryItem}>
+                <View style={styles.categoryIcon}>
+                  <Text style={{ fontSize: 28 }}>{cat.image}</Text>
+                </View>
+                <Text style={styles.categoryName}>{cat.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Trending */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Trending Now 🔥</Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/menu')}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={TRENDING_ITEMS}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.trendingCard}>
+                <View style={styles.trendingImage}>
+                  <Text style={{ fontSize: 40 }}>{item.image}</Text>
+                </View>
+                <View style={styles.trendingInfo}>
+                  <Text style={styles.trendingName} numberOfLines={1}>{item.name}</Text>
+                  <Text style={styles.trendingPrice}>Rs. {item.price.toLocaleString()}</Text>
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => addToCart(item)}
+                  >
+                    <Ionicons name="add" size={18} color="#FFF" />
+                    <Text style={styles.addButtonText}>Add</Text>
+                  </TouchableOpacity>
+                </View>
+                {item.discount && (
+                  <View style={styles.discountBadge}>
+                    <Text style={styles.discountText}>{item.discount}% OFF</Text>
+                  </View>
+                )}
+                {item.is_new && (
+                  <View style={styles.newBadge}>
+                    <Text style={styles.newText}>NEW</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+
+        {/* Info Cards */}
+        <View style={styles.infoSection}>
+          <View style={styles.infoCard}>
+            <Ionicons name="time" size={24} color={APP_COLORS.primary} />
+            <Text style={styles.infoValue}>25min</Text>
+            <Text style={styles.infoLabel}>Avg Delivery</Text>
+          </View>
+          <View style={styles.infoCard}>
+            <Ionicons name="star" size={24} color={APP_COLORS.warning} />
+            <Text style={styles.infoValue}>4.9</Text>
+            <Text style={styles.infoLabel}>37.1K+ Reviews</Text>
+          </View>
+          <View style={styles.infoCard}>
+            <Ionicons name="fast-food" size={24} color={APP_COLORS.success} />
+            <Text style={styles.infoValue}>250+</Text>
+            <Text style={styles.infoLabel}>Menu Items</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: APP_COLORS.background },
+  scrollContent: { paddingBottom: 100 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 16,
+    backgroundColor: APP_COLORS.card,
+  },
+  greeting: { fontSize: 14, color: APP_COLORS.textSecondary },
+  branchSelector: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  branchName: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
+  cartButton: { position: 'relative', padding: 8 },
+  badge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: APP_COLORS.primary,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: { color: '#FFF', fontSize: 11, fontWeight: '700' },
+  heroBanner: {
+    margin: 20,
+    backgroundColor: APP_COLORS.primary,
+    borderRadius: 20,
+    padding: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  heroContent: { flex: 1 },
+  heroTitle: { fontSize: 24, fontWeight: '800', color: '#FFF', marginBottom: 8 },
+  heroSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginBottom: 16 },
+  heroButton: {
+    backgroundColor: '#FFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 25,
+    alignSelf: 'flex-start',
+  },
+  heroButtonText: { color: APP_COLORS.primary, fontWeight: '700', fontSize: 14 },
+  heroEmoji: { fontSize: 64 },
+  section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: APP_COLORS.text, marginBottom: 12 },
+  seeAll: { color: APP_COLORS.primary, fontSize: 14, fontWeight: '600' },
+  categoriesScroll: { flexDirection: 'row' },
+  categoryItem: { alignItems: 'center', marginRight: 16 },
+  categoryIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: APP_COLORS.border,
+  },
+  categoryName: { marginTop: 6, fontSize: 12, color: APP_COLORS.textSecondary },
+  trendingCard: {
+    width: 180,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 12,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: APP_COLORS.border,
+    position: 'relative',
+  },
+  trendingImage: {
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  trendingName: { fontSize: 14, fontWeight: '600', color: APP_COLORS.text },
+  trendingPrice: { fontSize: 16, fontWeight: '700', color: APP_COLORS.primary, marginTop: 4 },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: APP_COLORS.primary,
+    borderRadius: 8,
+    paddingVertical: 6,
+    marginTop: 8,
+    gap: 2,
+  },
+  addButtonText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
+  discountBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: APP_COLORS.warning,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  discountText: { color: '#FFF', fontSize: 10, fontWeight: '700' },
+  newBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: APP_COLORS.success,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  newText: { color: '#FFF', fontSize: 10, fontWeight: '700' },
+  infoSection: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    gap: 12,
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: APP_COLORS.border,
+  },
+  infoValue: { fontSize: 20, fontWeight: '800', color: APP_COLORS.text, marginTop: 8 },
+  infoLabel: { fontSize: 11, color: APP_COLORS.textSecondary, textAlign: 'center' },
+});
