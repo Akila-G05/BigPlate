@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -58,7 +58,7 @@ export default function ItemDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Image */}
-        <FoodImage uri={item.image} size={300} borderRadius={0} style={styles.itemDetailImage} />
+        <Image source={{ uri: item.image }} style={styles.itemDetailImage} />
 
         {/* Info */}
         <View style={styles.infoSection}>

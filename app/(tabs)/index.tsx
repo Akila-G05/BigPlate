@@ -251,7 +251,6 @@ const styles = StyleSheet.create({
   heroButtonText: { color: APP_COLORS.primary, fontWeight: '700', fontSize: 14 },
   heroImage: { width: 100, height: 100, borderRadius: 16 },
   categoryImage: { width: 64, height: 64, borderRadius: 16 },
-  trendingImage: { width: '100%', height: 100, marginBottom: 8 },
   categoryName: { marginTop: 6, fontSize: 12, color: APP_COLORS.textSecondary },
   trendingCard: {
     width: 180,
