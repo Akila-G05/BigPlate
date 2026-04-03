@@ -115,7 +115,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: APP_COLORS.background, paddingTop: 50 },
+  container: { flex: 1, backgroundColor: APP_COLORS.background, paddingTop: 50, paddingBottom: 40 },
   authPrompt: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
   authTitle: { fontSize: 22, fontWeight: '700', color: APP_COLORS.text, marginTop: 16 },
   authSubtitle: { fontSize: 14, color: APP_COLORS.textSecondary, marginTop: 8, textAlign: 'center' },
