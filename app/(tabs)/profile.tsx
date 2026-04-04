@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +8,7 @@ import { useTheme } from '../../src/context/ThemeContext';
 import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import { useNotifications } from '../../src/context/NotificationContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
+import { supabase } from '../../src/lib/supabaseClient';
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background, paddingTop: 50 },
@@ -144,7 +146,7 @@ export default function ProfileScreen() {
     );
   }
 
-  const displayName = userName || user.email?.split('@')[0] || 'User';
+  const displayName = userName || user.user_metadata?.name || user.email?.split('@')[0] || 'User';
   const displayEmail = user.email || '';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
