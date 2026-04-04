@@ -28,6 +28,7 @@ export default function CheckoutScreen() {
   const [deliveryTime, setDeliveryTime] = useState(30);
   const [deliveryFee, setDeliveryFee] = useState(250);
   const [phone, setPhone] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const [instructions, setInstructions] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [loading, setLoading] = useState(false);
@@ -61,6 +62,7 @@ export default function CheckoutScreen() {
 
         const userAddress = addresses[0];
         setUserCity(userAddress.city);
+        setDeliveryAddress(userAddress.line1 + (userAddress.line2 ? ', ' + userAddress.line2 : '') + ', ' + userAddress.city);
 
         // Get city delivery info
         const { data: cityData } = await supabase
@@ -148,7 +150,6 @@ export default function CheckoutScreen() {
 
     setLoading(true);
     try {
-      // Get user's address for the order
       const { data: addresses } = await supabase
         .from('addresses')
         .select('*')
@@ -283,6 +284,16 @@ export default function CheckoutScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery Details</Text>
           <View style={styles.inputGroup}>
+            <Text style={styles.label}>Delivery Address</Text>
+            <TextInput
+              style={[styles.input, styles.disabledInput]}
+              value={deliveryAddress}
+              editable={false}
+              multiline
+              numberOfLines={2}
+            />
+          </View>
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>Phone Number</Text>
             <TextInput
               style={styles.input}
@@ -404,6 +415,7 @@ const styles = StyleSheet.create({
   inputGroup: { marginBottom: 12 },
   label: { fontSize: 14, fontWeight: '600', color: APP_COLORS.text, marginBottom: 6 },
   input: { backgroundColor: '#FFF', borderWidth: 1, borderColor: APP_COLORS.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: APP_COLORS.text },
+  disabledInput: { backgroundColor: '#F3F4F6', color: APP_COLORS.textSecondary },
   textArea: { textAlignVertical: 'top', minHeight: 80 },
   paymentOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: APP_COLORS.border, gap: 12 },
   paymentOptionActive: { borderColor: APP_COLORS.primary, backgroundColor: '#FFF5F5' },
