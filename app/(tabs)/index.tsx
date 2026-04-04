@@ -144,7 +144,7 @@ export default function HomeScreen() {
           style={styles.cartButton}
           onPress={() => router.push("/(tabs)/cart")}
         >
-          <Ionicons name="cart-outline" size={24} color={APP_COLORS.text} />
+          <Ionicons name="cart-outline" size={24} color={colors.text} />
           {itemCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{itemCount}</Text>
