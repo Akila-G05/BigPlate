@@ -74,7 +74,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingBottom: 32,
     gap: 12,
   },
-  quantityControl: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: '#FFF0F0', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+  quantityControl: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: 'rgba(230, 57, 70, 0.1)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
   qtyButton: { width: 32, height: 32, justifyContent: 'center', alignItems: 'center' },
   qtyText: { fontSize: 18, fontWeight: '700', color: c.text, minWidth: 24, textAlign: 'center' },
   addButton: {

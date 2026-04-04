@@ -2,6 +2,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
+import { useTheme } from '../../src/context/ThemeContext';
+import type { ThemeColors } from '../../src/context/ThemeContext';
 import { FoodImage } from '../../src/components/FoodImage';
 
 const PROMOTIONS = [
@@ -37,21 +39,47 @@ const PROMOTIONS = [
   },
 ];
 
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 50, paddingBottom: 16, backgroundColor: c.card },
+  backButton: { padding: 4 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+  scrollContent: { padding: 20, paddingBottom: 100 },
+  banner: { backgroundColor: APP_COLORS.primary, borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 24 },
+  bannerTitle: { fontSize: 22, fontWeight: '800', color: '#FFF', marginTop: 8 },
+  bannerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  promoCard: { backgroundColor: c.card, borderRadius: 20, marginBottom: 16, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
+  promoImage: { width: '100%', height: 140 },
+  promoContent: { padding: 16 },
+  promoHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  promoTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+  discountBadge: { backgroundColor: APP_COLORS.warning, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  discountText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
+  promoDesc: { fontSize: 14, color: c.textSecondary, marginBottom: 12, lineHeight: 20 },
+  promoFooter: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+  codeContainer: { borderWidth: 1, borderColor: APP_COLORS.primary, borderStyle: 'dashed', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  codeText: { fontSize: 14, fontWeight: '700', color: APP_COLORS.primary },
+  applyButton: { flex: 1, backgroundColor: APP_COLORS.primary, borderRadius: 10, paddingVertical: 8, alignItems: 'center' },
+  applyText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
+  validText: { fontSize: 12, color: c.textSecondary },
+});
+
 export default function PromotionsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Promotions</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Banner */}
         <View style={styles.banner}>
           <Ionicons name="gift" size={32} color="#FFF" />
           <Text style={styles.bannerTitle}>Exclusive Deals</Text>
@@ -92,62 +120,3 @@ export default function PromotionsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: APP_COLORS.background },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 16,
-    backgroundColor: APP_COLORS.card,
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
-  scrollContent: { padding: 20, paddingBottom: 100 },
-  banner: {
-    backgroundColor: APP_COLORS.primary,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  bannerTitle: { fontSize: 22, fontWeight: '800', color: '#FFF', marginTop: 8 },
-  bannerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
-  promoCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: APP_COLORS.border,
-    overflow: 'hidden',
-  },
-  promoImage: { width: '100%', height: 140 },
-  promoContent: { padding: 16 },
-  promoHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  promoTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
-  discountBadge: { backgroundColor: APP_COLORS.warning, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  discountText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
-  promoDesc: { fontSize: 14, color: APP_COLORS.textSecondary, marginBottom: 12, lineHeight: 20 },
-  promoFooter: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
-  codeContainer: {
-    borderWidth: 1,
-    borderColor: APP_COLORS.primary,
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  codeText: { fontSize: 14, fontWeight: '700', color: APP_COLORS.primary },
-  applyButton: {
-    flex: 1,
-    backgroundColor: APP_COLORS.primary,
-    borderRadius: 10,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  applyText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
-  validText: { fontSize: 12, color: APP_COLORS.textSecondary },
-});
