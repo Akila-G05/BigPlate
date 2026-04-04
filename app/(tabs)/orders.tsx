@@ -23,7 +23,7 @@ export default function OrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [deliveryTime, setDeliveryTime] = useState(30);
+  const [deliveryTimes, setDeliveryTimes] = useState<Record<string, number>>({});
 
   const fetchOrders = async () => {
     if (!user) {
@@ -41,14 +41,18 @@ export default function OrdersScreen() {
       if (error) throw error;
       setOrders(data || []);
 
-      if (data && data.length > 0 && data[0].city) {
+      // Fetch delivery times for each unique city
+      const cities = [...new Set(data?.map((o) => o.city).filter(Boolean))];
+      const times: Record<string, number> = {};
+      for (const city of cities) {
         const { data: cityData } = await supabase
           .from('cities')
           .select('delivery_time_minutes')
-          .eq('name', data[0].city)
+          .eq('name', city)
           .single();
-        if (cityData) setDeliveryTime(cityData.delivery_time_minutes);
+        if (cityData) times[city] = cityData.delivery_time_minutes;
       }
+      setDeliveryTimes(times);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
     } finally {
@@ -174,7 +178,7 @@ export default function OrdersScreen() {
                     <View style={styles.activeOrderFooter}>
                       <View>
                         <Text style={styles.etaLabel}>Estimated Delivery</Text>
-                        <Text style={styles.etaValue}>{deliveryTime}-{deliveryTime + 10} min</Text>
+                        <Text style={styles.etaValue}>{deliveryTimes[order.city] || 30}-{(deliveryTimes[order.city] || 30) + 10} min</Text>
                       </View>
                       <Ionicons name={selectedOrder === order.id ? 'chevron-up' : 'chevron-down'} size={24} color={APP_COLORS.textSecondary} />
                     </View>
