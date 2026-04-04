@@ -134,123 +134,78 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, user, loading]);
 
   const addToCart = useCallback(async (menuItem: MenuItem) => {
-    if (user) {
-      // Logged in: upsert to Supabase
-      await supabase
-        .from('cart_items')
-        .upsert(
-          { user_id: user.id, menu_item_id: menuItem.id, quantity: 1 },
-          { onConflict: 'user_id,menu_item_id' }
+    // Always update local state first for instant feedback
+    setItems((prev) => {
+      const existing = prev.find((i) => i.menu_item.id === menuItem.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.menu_item.id === menuItem.id
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
         );
+      }
+      return [...prev, { menu_item: menuItem, quantity: 1 }];
+    });
 
-      // Refresh cart from DB
-      const { data } = await supabase
-        .from('cart_items')
-        .select('*, menu_items(*)')
-        .eq('user_id', user.id);
-
-      const cartItems: CartItem[] = (data || [])
-        .filter((row) => row.menu_items)
-        .map((row) => ({
-          menu_item: row.menu_items,
-          quantity: row.quantity,
-        }));
-
-      setItems(cartItems);
-    } else {
-      // Guest: update local state (auto-saved via useEffect)
-      setItems((prev) => {
-        const existing = prev.find((i) => i.menu_item.id === menuItem.id);
-        if (existing) {
-          return prev.map((i) =>
-            i.menu_item.id === menuItem.id
-              ? { ...i, quantity: i.quantity + 1 }
-              : i
+    if (user) {
+      try {
+        await supabase
+          .from('cart_items')
+          .upsert(
+            { user_id: user.id, menu_item_id: menuItem.id, quantity: 1 },
+            { onConflict: 'user_id,menu_item_id' }
           );
-        }
-        return [...prev, { menu_item: menuItem, quantity: 1 }];
-      });
+      } catch (error) {
+        console.error('Failed to sync cart to DB:', error);
+      }
     }
   }, [user]);
 
   const removeFromCart = useCallback(async (itemId: string) => {
+    setItems((prev) => prev.filter((i) => i.menu_item.id !== itemId));
     if (user) {
-      await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('menu_item_id', itemId);
-
-      const { data } = await supabase
-        .from('cart_items')
-        .select('*, menu_items(*)')
-        .eq('user_id', user.id);
-
-      const cartItems: CartItem[] = (data || [])
-        .filter((row) => row.menu_items)
-        .map((row) => ({
-          menu_item: row.menu_items,
-          quantity: row.quantity,
-        }));
-
-      setItems(cartItems);
-    } else {
-      setItems((prev) => prev.filter((i) => i.menu_item.id !== itemId));
+      try {
+        await supabase.from('cart_items').delete().eq('user_id', user.id).eq('menu_item_id', itemId);
+      } catch (error) {
+        console.error('Failed to remove from cart (DB):', error);
+      }
     }
   }, [user]);
 
   const updateQuantity = useCallback(async (itemId: string, quantity: number) => {
-    if (user) {
-      if (quantity <= 0) {
-        await supabase
-          .from('cart_items')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('menu_item_id', itemId);
-      } else {
-        await supabase
-          .from('cart_items')
-          .update({ quantity, updated_at: new Date().toISOString() })
-          .eq('user_id', user.id)
-          .eq('menu_item_id', itemId);
-      }
-
-      const { data } = await supabase
-        .from('cart_items')
-        .select('*, menu_items(*)')
-        .eq('user_id', user.id);
-
-      const cartItems: CartItem[] = (data || [])
-        .filter((row) => row.menu_items)
-        .map((row) => ({
-          menu_item: row.menu_items,
-          quantity: row.quantity,
-        }));
-
-      setItems(cartItems);
+    if (quantity <= 0) {
+      setItems((prev) => prev.filter((i) => i.menu_item.id !== itemId));
     } else {
-      if (quantity <= 0) {
-        setItems((prev) => prev.filter((i) => i.menu_item.id !== itemId));
-      } else {
-        setItems((prev) =>
-          prev.map((i) =>
-            i.menu_item.id === itemId ? { ...i, quantity } : i
-          )
-        );
+      setItems((prev) =>
+        prev.map((i) =>
+          i.menu_item.id === itemId ? { ...i, quantity } : i
+        )
+      );
+    }
+    if (user) {
+      try {
+        if (quantity <= 0) {
+          await supabase.from('cart_items').delete().eq('user_id', user.id).eq('menu_item_id', itemId);
+        } else {
+          await supabase.from('cart_items').update({ quantity }).eq('user_id', user.id).eq('menu_item_id', itemId);
+        }
+      } catch (error) {
+        console.error('Failed to update cart (DB):', error);
       }
     }
   }, [user]);
 
   const clearCart = useCallback(async () => {
+    setItems([]);
     if (user) {
-      await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', user.id);
+      try {
+        await supabase.from('cart_items').delete().eq('user_id', user.id);
+      } catch (error) {
+        console.error('Failed to clear cart (DB):', error);
+      }
     } else {
       await AsyncStorage.removeItem(LOCAL_CART_KEY);
     }
-    setItems([]);
   }, [user]);
 
   const total = items.reduce(
