@@ -100,11 +100,19 @@ export default function OrdersScreen() {
     try {
       const [{ data: statusesData }, { data: ordersData }] = await Promise.all([
         supabase.from('order_statuses').select('*').order('sort_order', { ascending: true }),
-        supabase.from('orders').select('*, order_items(*), order_statuses(*)').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('*, order_items(*)').eq('user_id', user.id).order('created_at', { ascending: false }),
       ]);
 
       if (statusesData) setStatuses(statusesData);
-      if (ordersData) setOrders(ordersData as Order[]);
+
+      // Match statuses locally
+      if (ordersData) {
+        const ordersWithStatus = ordersData.map((order) => ({
+          ...order,
+          order_statuses: statusesData?.find((s) => s.id === order.status_id) || null,
+        }));
+        setOrders(ordersWithStatus as Order[]);
+      }
 
       // Fetch delivery times for each unique city
       const cities = [...new Set(ordersData?.map((o) => o.city).filter(Boolean))];
