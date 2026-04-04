@@ -33,7 +33,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   backButton: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: c.text },
   scrollContent: { padding: 20, paddingBottom: 100 },
-  section: { backgroundColor: c.card, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
+  section: { backgroundColor: c.card, borderRadius: 16, marginBottom: 16, paddingLeft:10, paddingTop:10, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 12, paddingHorizontal: 4 },
   settingItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderBottomColor: c.border },
   settingLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },

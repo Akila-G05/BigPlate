@@ -69,29 +69,31 @@ export function ThemedAlertProvider({ children }: { children: React.ReactNode })
     <ThemedAlertContext.Provider value={{ showAlert }}>
       {children}
       <Modal visible={config.visible} transparent animationType="none">
-        <Animated.View style={[styles.overlay, { opacity }]}>
-          <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={hideAlert} />
-          <View style={styles.container} onStartShouldSetResponder={() => true}>
-            <Text style={styles.title}>{config.title}</Text>
-            <Text style={styles.message}>{config.message}</Text>
-            <View style={styles.buttons}>
-              {config.buttons.map((btn, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={[
-                    styles.button,
-                    btn.style === 'cancel' ? styles.buttonCancel : btn.style === 'destructive' ? styles.buttonDestructive : styles.buttonDefault,
-                  ]}
-                  onPress={() => handlePress(btn)}
-                >
-                  <Text style={[styles.buttonText, btn.style === 'cancel' && styles.buttonTextCancel]}>
-                    {btn.text}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+        <View style={styles.overlay}>
+          <Animated.View style={{ opacity, width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+            <TouchableOpacity style={{ position: 'absolute', width: '100%', height: '100%' }} activeOpacity={1} onPress={hideAlert} />
+            <View style={styles.container} onStartShouldSetResponder={() => true}>
+              <Text style={styles.title}>{config.title}</Text>
+              <Text style={styles.message}>{config.message}</Text>
+              <View style={styles.buttons}>
+                {config.buttons.map((btn, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={[
+                      styles.button,
+                      btn.style === 'cancel' ? styles.buttonCancel : btn.style === 'destructive' ? styles.buttonDestructive : styles.buttonDefault,
+                    ]}
+                    onPress={() => handlePress(btn)}
+                  >
+                    <Text style={[styles.buttonText, btn.style === 'cancel' && styles.buttonTextCancel]}>
+                      {btn.text}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        </View>
       </Modal>
     </ThemedAlertContext.Provider>
   );

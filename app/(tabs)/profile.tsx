@@ -5,6 +5,7 @@ import { APP_COLORS, BRANCHES } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useThemedAlert } from '../../src/context/ThemedAlertContext';
+import { useNotifications } from '../../src/context/NotificationContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
@@ -97,7 +98,7 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { colors } = useTheme();
   const { showAlert } = useThemedAlert();
-  const unreadCount = 2;
+  const { unreadCount } = useNotifications();
   const styles = createStyles(colors);
 
   const handleSignOut = async () => {

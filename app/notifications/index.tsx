@@ -1,18 +1,11 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useNotifications } from '../../src/context/NotificationContext';
+import { useAuth } from '../../src/context/AuthContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
-
-const NOTIFICATIONS = [
-  { id: '1', title: 'Order Confirmed!', message: 'Your order #ORD-001 has been confirmed and is being prepared.', time: '2 min ago', read: false, type: 'order' },
-  { id: '2', title: '20% OFF Burgers!', message: 'Get 20% off on all burgers this week. Use code BURGER20 at checkout.', time: '1 hour ago', read: false, type: 'promo' },
-  { id: '3', title: 'Order Delivered', message: 'Your order #ORD-002 has been delivered. Enjoy your meal!', time: 'Yesterday', read: true, type: 'order' },
-  { id: '4', title: 'New Menu Items!', message: 'Check out our new Chicken Submarine and Mango Lassi. Order now!', time: '2 days ago', read: true, type: 'promo' },
-  { id: '5', title: 'Welcome to Big Plate!', message: 'Thanks for joining us. Enjoy exclusive deals and fast delivery.', time: '1 week ago', read: true, type: 'system' },
-];
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
@@ -38,19 +31,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { colors } = useTheme();
-  const [notifications, setNotifications] = useState(NOTIFICATIONS);
+  const { notifications, unreadCount, loading, markAsRead, markAllRead, fetchNotifications } = useNotifications();
   const styles = createStyles(colors);
-
-  const markAsRead = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-  };
-
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -67,6 +51,57 @@ export default function NotificationsScreen() {
       default: return colors.textSecondary;
     }
   };
+
+  const formatTime = (dateStr: string) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+  };
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Notifications</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.empty}>
+          <Ionicons name="lock-closed-outline" size={64} color={colors.textSecondary} />
+          <Text style={styles.emptyTitle}>Sign in required</Text>
+          <Text style={styles.emptySubtitle}>Please sign in to view notifications</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Notifications</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={APP_COLORS.primary} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -87,6 +122,8 @@ export default function NotificationsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={fetchNotifications}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="notifications-off-outline" size={64} color={colors.textSecondary} />
@@ -96,7 +133,7 @@ export default function NotificationsScreen() {
         }
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.notifCard, !item.read && styles.notifCardUnread]}
+            style={[styles.notifCard, !item.is_read && styles.notifCardUnread]}
             onPress={() => markAsRead(item.id)}
           >
             <View style={[styles.iconContainer, { backgroundColor: getIconColor(item.type) + '15' }]}>
@@ -104,15 +141,15 @@ export default function NotificationsScreen() {
             </View>
             <View style={styles.notifContent}>
               <View style={styles.notifHeader}>
-                <Text style={[styles.notifTitle, !item.read && styles.notifTitleUnread]}>
+                <Text style={[styles.notifTitle, !item.is_read && styles.notifTitleUnread]}>
                   {item.title}
                 </Text>
-                {!item.read && <View style={styles.unreadDot} />}
+                {!item.is_read && <View style={styles.unreadDot} />}
               </View>
               <Text style={styles.notifMessage} numberOfLines={2}>
                 {item.message}
               </Text>
-              <Text style={styles.notifTime}>{item.time}</Text>
+              <Text style={styles.notifTime}>{formatTime(item.created_at)}</Text>
             </View>
           </TouchableOpacity>
         )}
