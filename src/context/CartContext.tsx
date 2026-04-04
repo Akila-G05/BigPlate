@@ -1,77 +1,257 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from './AuthContext';
 import type { CartItem, MenuItem } from '../types';
 
-const CART_STORAGE_KEY = 'bigplate_cart';
+const LOCAL_CART_KEY = 'bigplate_cart_local';
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (item: MenuItem) => void;
-  removeFromCart: (itemId: string) => void;
-  updateQuantity: (itemId: string, quantity: number) => void;
-  clearCart: () => void;
+  addToCart: (item: MenuItem) => Promise<void>;
+  removeFromCart: (itemId: string) => Promise<void>;
+  updateQuantity: (itemId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   total: number;
   itemCount: number;
+  loading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const mergingRef = useRef(false);
 
+  // Load cart on mount and auth change
   useEffect(() => {
-    AsyncStorage.getItem(CART_STORAGE_KEY).then((data) => {
-      if (data) {
-        try {
-          setItems(JSON.parse(data));
-        } catch {
-          setItems([]);
+    let cancelled = false;
+
+    const loadCart = async () => {
+      setLoading(true);
+      try {
+        if (user) {
+          // Logged in: fetch from Supabase
+          const { data, error } = await supabase
+            .from('cart_items')
+            .select('*, menu_items(*)')
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+
+          if (!cancelled) {
+            const cartItems: CartItem[] = (data || [])
+              .filter((row) => row.menu_items)
+              .map((row) => ({
+                menu_item: row.menu_items,
+                quantity: row.quantity,
+              }));
+            setItems(cartItems);
+          }
+        } else {
+          // Guest: load from AsyncStorage
+          const localData = await AsyncStorage.getItem(LOCAL_CART_KEY);
+          if (!cancelled) {
+            setItems(localData ? JSON.parse(localData) : []);
+          }
         }
+      } catch (error) {
+        console.error('Failed to load cart:', error);
+        if (!cancelled) setItems([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoaded(true);
-    });
-  }, []);
+    };
 
+    loadCart();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  // Merge local cart into DB cart when user logs in
   useEffect(() => {
-    if (loaded) {
-      AsyncStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-    }
-  }, [items, loaded]);
+    if (!user || mergingRef.current) return;
 
-  const addToCart = useCallback((menuItem: MenuItem) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.menu_item.id === menuItem.id);
-      if (existing) {
-        return prev.map((i) =>
-          i.menu_item.id === menuItem.id
-            ? { ...i, quantity: i.quantity + 1 }
-            : i
+    const mergeLocalCart = async () => {
+      mergingRef.current = true;
+      try {
+        const localData = await AsyncStorage.getItem(LOCAL_CART_KEY);
+        if (!localData) {
+          mergingRef.current = false;
+          return;
+        }
+
+        const localItems: CartItem[] = JSON.parse(localData);
+        if (localItems.length === 0) {
+          mergingRef.current = false;
+          return;
+        }
+
+        // Upsert local items into DB
+        const upsertData = localItems.map((item) => ({
+          user_id: user.id,
+          menu_item_id: item.menu_item.id,
+          quantity: item.quantity,
+        }));
+
+        await supabase
+          .from('cart_items')
+          .upsert(upsertData, { onConflict: 'user_id,menu_item_id' });
+
+        // Clear local cart after merge
+        await AsyncStorage.removeItem(LOCAL_CART_KEY);
+
+        // Reload cart from DB (now includes merged items)
+        const { data } = await supabase
+          .from('cart_items')
+          .select('*, menu_items(*)')
+          .eq('user_id', user.id);
+
+        const cartItems: CartItem[] = (data || [])
+          .filter((row) => row.menu_items)
+          .map((row) => ({
+            menu_item: row.menu_items,
+            quantity: row.quantity,
+          }));
+
+        setItems(cartItems);
+      } catch (error) {
+        console.error('Failed to merge local cart:', error);
+      } finally {
+        mergingRef.current = false;
+      }
+    };
+
+    mergeLocalCart();
+  }, [user]);
+
+  // Save to AsyncStorage when guest cart changes
+  useEffect(() => {
+    if (!user && !loading && !mergingRef.current) {
+      AsyncStorage.setItem(LOCAL_CART_KEY, JSON.stringify(items));
+    }
+  }, [items, user, loading]);
+
+  const addToCart = useCallback(async (menuItem: MenuItem) => {
+    if (user) {
+      // Logged in: upsert to Supabase
+      await supabase
+        .from('cart_items')
+        .upsert(
+          { user_id: user.id, menu_item_id: menuItem.id, quantity: 1 },
+          { onConflict: 'user_id,menu_item_id' }
+        );
+
+      // Refresh cart from DB
+      const { data } = await supabase
+        .from('cart_items')
+        .select('*, menu_items(*)')
+        .eq('user_id', user.id);
+
+      const cartItems: CartItem[] = (data || [])
+        .filter((row) => row.menu_items)
+        .map((row) => ({
+          menu_item: row.menu_items,
+          quantity: row.quantity,
+        }));
+
+      setItems(cartItems);
+    } else {
+      // Guest: update local state (auto-saved via useEffect)
+      setItems((prev) => {
+        const existing = prev.find((i) => i.menu_item.id === menuItem.id);
+        if (existing) {
+          return prev.map((i) =>
+            i.menu_item.id === menuItem.id
+              ? { ...i, quantity: i.quantity + 1 }
+              : i
+          );
+        }
+        return [...prev, { menu_item: menuItem, quantity: 1 }];
+      });
+    }
+  }, [user]);
+
+  const removeFromCart = useCallback(async (itemId: string) => {
+    if (user) {
+      await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('menu_item_id', itemId);
+
+      const { data } = await supabase
+        .from('cart_items')
+        .select('*, menu_items(*)')
+        .eq('user_id', user.id);
+
+      const cartItems: CartItem[] = (data || [])
+        .filter((row) => row.menu_items)
+        .map((row) => ({
+          menu_item: row.menu_items,
+          quantity: row.quantity,
+        }));
+
+      setItems(cartItems);
+    } else {
+      setItems((prev) => prev.filter((i) => i.menu_item.id !== itemId));
+    }
+  }, [user]);
+
+  const updateQuantity = useCallback(async (itemId: string, quantity: number) => {
+    if (user) {
+      if (quantity <= 0) {
+        await supabase
+          .from('cart_items')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('menu_item_id', itemId);
+      } else {
+        await supabase
+          .from('cart_items')
+          .update({ quantity, updated_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+          .eq('menu_item_id', itemId);
+      }
+
+      const { data } = await supabase
+        .from('cart_items')
+        .select('*, menu_items(*)')
+        .eq('user_id', user.id);
+
+      const cartItems: CartItem[] = (data || [])
+        .filter((row) => row.menu_items)
+        .map((row) => ({
+          menu_item: row.menu_items,
+          quantity: row.quantity,
+        }));
+
+      setItems(cartItems);
+    } else {
+      if (quantity <= 0) {
+        setItems((prev) => prev.filter((i) => i.menu_item.id !== itemId));
+      } else {
+        setItems((prev) =>
+          prev.map((i) =>
+            i.menu_item.id === itemId ? { ...i, quantity } : i
+          )
         );
       }
-      return [...prev, { menu_item: menuItem, quantity: 1 }];
-    });
-  }, []);
-
-  const removeFromCart = useCallback((itemId: string) => {
-    setItems((prev) => prev.filter((i) => i.menu_item.id !== itemId));
-  }, []);
-
-  const updateQuantity = useCallback((itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      setItems((prev) => prev.filter((i) => i.menu_item.id !== itemId));
-      return;
     }
-    setItems((prev) =>
-      prev.map((i) =>
-        i.menu_item.id === itemId ? { ...i, quantity } : i
-      )
-    );
-  }, []);
+  }, [user]);
 
-  const clearCart = useCallback(() => {
+  const clearCart = useCallback(async () => {
+    if (user) {
+      await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', user.id);
+    } else {
+      await AsyncStorage.removeItem(LOCAL_CART_KEY);
+    }
     setItems([]);
-  }, []);
+  }, [user]);
 
   const total = items.reduce(
     (sum, i) => sum + i.menu_item.price * i.quantity,
@@ -82,7 +262,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, total, itemCount }}
+      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, total, itemCount, loading }}
     >
       {children}
     </CartContext.Provider>
