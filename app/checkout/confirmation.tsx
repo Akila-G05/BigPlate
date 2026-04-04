@@ -1,9 +1,17 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useTheme } from '../../src/context/ThemeContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
+
+const STATUS_COLORS = {
+  pending: { bg: '#FEF3C7', text: '#92400E', icon: '#F59E0B' },
+  confirmed: { bg: '#DBEAFE', text: '#1E40AF', icon: '#3B82F6' },
+  preparing: { bg: '#EDE9FE', text: '#5B21B6', icon: '#8B5CF6' },
+  delivering: { bg: '#FEE2E2', text: '#991B1B', icon: '#EF4444' },
+  delivered: { bg: '#D1FAE5', text: '#065F46', icon: '#10B981' },
+};
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
@@ -44,10 +52,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  stepDotActive: { backgroundColor: APP_COLORS.primary },
-  stepDotPending: { backgroundColor: '#E5E7EB' },
-  stepText: { fontSize: 11, color: c.text, marginTop: 6, fontWeight: '600' },
-  stepTextPending: { color: c.textSecondary },
+  stepText: { fontSize: 11, marginTop: 6, fontWeight: '600' },
   stepLine: { flex: 1, height: 2, backgroundColor: '#E5E7EB', marginHorizontal: 4, marginBottom: 20 },
   trackButton: {
     flexDirection: 'row',
@@ -61,22 +66,30 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: 12,
   },
   trackButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  homeButton: {
-    paddingVertical: 12,
-  },
+  homeButton: { paddingVertical: 12 },
   homeButtonText: { color: c.textSecondary, fontSize: 15, fontWeight: '600' },
 });
 
 export default function OrderConfirmationScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { colors } = useTheme();
   const styles = createStyles(colors);
+  const orderId = (params.orderId as string)?.slice(0, 8) || '';
+
+  const steps = [
+    { label: 'Pending', icon: 'time', color: STATUS_COLORS.pending },
+    { label: 'Preparing', icon: 'flame', color: STATUS_COLORS.preparing },
+    { label: 'Delivered', icon: 'home', color: STATUS_COLORS.delivered },
+  ];
+
+  const currentStep = 0; // Pending
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.successIcon}>
-          <Ionicons name="checkmark-circle" size={80} color={APP_COLORS.success} />
+          <Ionicons name="checkmark-circle" size={80} color={STATUS_COLORS.pending.icon} />
         </View>
         <Text style={styles.title}>Order Placed!</Text>
         <Text style={styles.subtitle}>
@@ -85,10 +98,19 @@ export default function OrderConfirmationScreen() {
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Ionicons name="time" size={20} color={APP_COLORS.primary} />
+            <Ionicons name="receipt" size={20} color={colors.textSecondary} />
+            <View style={styles.infoText}>
+              <Text style={styles.infoLabel}>Order ID</Text>
+              <Text style={styles.infoValue}>#{orderId}</Text>
+            </View>
+          </View>
+          <View style={styles.infoRow}>
+            <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS.pending.bg }]}>
+              <Ionicons name="time" size={16} color={STATUS_COLORS.pending.icon} />
+              <Text style={[styles.statusText, { color: STATUS_COLORS.pending.text }]}>Pending</Text>
+            </View>
             <View style={styles.infoText}>
               <Text style={styles.infoLabel}>Status</Text>
-              <Text style={styles.infoValue}>Pending</Text>
             </View>
           </View>
           <View style={styles.infoRow}>
@@ -101,26 +123,28 @@ export default function OrderConfirmationScreen() {
         </View>
 
         <View style={styles.statusSteps}>
-          <View style={styles.step}>
-            <View style={[styles.stepDot, styles.stepDotActive]}>
-              <Ionicons name="time" size={16} color="#FFF" />
-            </View>
-            <Text style={styles.stepText}>Pending</Text>
-          </View>
-          <View style={styles.stepLine} />
-          <View style={styles.step}>
-            <View style={[styles.stepDot, styles.stepDotPending]}>
-              <Ionicons name="flame" size={14} color={colors.textSecondary} />
-            </View>
-            <Text style={[styles.stepText, styles.stepTextPending]}>Preparing</Text>
-          </View>
-          <View style={styles.stepLine} />
-          <View style={styles.step}>
-            <View style={[styles.stepDot, styles.stepDotPending]}>
-              <Ionicons name="home" size={14} color={colors.textSecondary} />
-            </View>
-            <Text style={[styles.stepText, styles.stepTextPending]}>Delivered</Text>
-          </View>
+          {steps.map((step, index) => {
+            const isActive = index <= currentStep;
+            const isCurrent = index === currentStep;
+            return (
+              <View key={step.label} style={styles.step}>
+                <View
+                  style={[
+                    styles.stepDot,
+                    { backgroundColor: isActive ? step.color.icon : '#E5E7EB' },
+                  ]}
+                >
+                  <Ionicons name={step.icon as any} size={16} color="#FFF" />
+                </View>
+                <Text style={[styles.stepText, { color: isActive ? step.color.text : colors.textSecondary }]}>
+                  {step.label}
+                </Text>
+                {index < steps.length - 1 && (
+                  <View style={styles.stepLine} />
+                )}
+              </View>
+            );
+          })}
         </View>
 
         <TouchableOpacity
@@ -141,3 +165,8 @@ export default function OrderConfirmationScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  statusText: { fontSize: 14, fontWeight: '700' },
+});

@@ -8,6 +8,14 @@ import { useTheme } from '../../src/context/ThemeContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
+const STATUS_COLORS: Record<string, { bg: string; text: string; icon: string; dot: string }> = {
+  pending: { bg: '#FEF3C7', text: '#92400E', icon: '#F59E0B', dot: '#F59E0B' },
+  confirmed: { bg: '#DBEAFE', text: '#1E40AF', icon: '#3B82F6', dot: '#3B82F6' },
+  preparing: { bg: '#EDE9FE', text: '#5B21B6', icon: '#8B5CF6', dot: '#8B5CF6' },
+  delivering: { bg: '#FEE2E2', text: '#991B1B', icon: '#EF4444', dot: '#EF4444' },
+  delivered: { bg: '#D1FAE5', text: '#065F46', icon: '#10B981', dot: '#10B981' },
+};
+
 type OrderStatus = { id: string; name: string; label: string; icon: string; sort_order: number };
 type OrderItem = { id: string; order_id: string; menu_item_id: string; name: string; quantity: number; price: number };
 type Order = {
@@ -39,18 +47,14 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   activeOrderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   activeOrderId: { fontSize: 18, fontWeight: '700', color: c.text },
   activeOrderBranch: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
-  liveBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEE2E2', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 4 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: APP_COLORS.primary },
-  liveText: { fontSize: 11, fontWeight: '700', color: APP_COLORS.primary },
+  liveBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 4 },
+  liveDot: { width: 6, height: 6, borderRadius: 3 },
+  liveText: { fontSize: 11, fontWeight: '700' },
   progressSteps: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   stepItem: { alignItems: 'center', flex: 1 },
   stepDot: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  stepDotActive: { backgroundColor: APP_COLORS.success },
-  stepDotCurrent: { backgroundColor: APP_COLORS.primary },
-  stepLabel: { fontSize: 10, color: c.textSecondary, textAlign: 'center' },
-  stepLabelActive: { color: APP_COLORS.success, fontWeight: '600' },
+  stepLabel: { fontSize: 10, textAlign: 'center' },
   stepLine: { position: 'absolute', top: 18, left: '50%', width: '100%', height: 2, backgroundColor: '#E5E7EB', zIndex: -1 },
-  stepLineActive: { backgroundColor: APP_COLORS.success },
   activeOrderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   etaLabel: { fontSize: 12, color: c.textSecondary },
   etaValue: { fontSize: 18, fontWeight: '700', color: c.text },
@@ -68,8 +72,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   orderId: { fontSize: 16, fontWeight: '700', color: c.text },
   orderDate: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  status_delivered: { backgroundColor: '#D1FAE5' },
-  statusText: { fontSize: 12, fontWeight: '600', color: c.text },
+  statusText: { fontSize: 12, fontWeight: '600' },
   orderItems: { fontSize: 13, color: c.textSecondary, marginBottom: 10 },
   orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   orderTotal: { fontSize: 16, fontWeight: '700', color: APP_COLORS.primary },
@@ -203,9 +206,9 @@ export default function OrdersScreen() {
                         <Text style={styles.activeOrderId}>#{order.id.slice(0, 8)}</Text>
                         <Text style={styles.activeOrderBranch}>{order.branch}</Text>
                       </View>
-                      <View style={styles.liveBadge}>
-                        <View style={styles.liveDot} />
-                        <Text style={styles.liveText}>{order.order_statuses?.label || order.order_statuses?.name}</Text>
+                      <View style={[styles.liveBadge, { backgroundColor: STATUS_COLORS[order.order_statuses?.name]?.bg || '#E5E7EB' }]}>
+                        <View style={[styles.liveDot, { backgroundColor: STATUS_COLORS[order.order_statuses?.name]?.dot || APP_COLORS.primary }]} />
+                        <Text style={[styles.liveText, { color: STATUS_COLORS[order.order_statuses?.name]?.text || APP_COLORS.text }]}>{order.order_statuses?.label || order.order_statuses?.name}</Text>
                       </View>
                     </View>
 
@@ -213,15 +216,23 @@ export default function OrdersScreen() {
                       {statuses.map((step, index) => {
                         const isActive = index < currentStatusSort;
                         const isCurrent = index === currentStatusSort - 1;
+                        const stepColor = STATUS_COLORS[step.name];
 
                         return (
                           <View key={step.id} style={styles.stepItem}>
-                            <View style={[styles.stepDot, isActive && styles.stepDotActive, isCurrent && styles.stepDotCurrent]}>
-                              <Ionicons name={step.icon as any} size={16} color={isActive ? '#FFF' : colors.textSecondary} />
+                            <View
+                              style={[
+                                styles.stepDot,
+                                { backgroundColor: isActive ? stepColor?.icon || APP_COLORS.success : '#E5E7EB' },
+                              ]}
+                            >
+                              <Ionicons name={step.icon as any} size={16} color="#FFF" />
                             </View>
-                            <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>{step.label}</Text>
+                            <Text style={[styles.stepLabel, { color: isActive ? stepColor?.text || APP_COLORS.success : colors.textSecondary }]}>
+                              {step.label}
+                            </Text>
                             {index < statuses.length - 1 && (
-                              <View style={[styles.stepLine, index < currentStatusSort - 1 && styles.stepLineActive]} />
+                              <View style={[styles.stepLine, { backgroundColor: index < currentStatusSort - 1 ? stepColor?.icon || APP_COLORS.success : '#E5E7EB' }]} />
                             )}
                           </View>
                         );
@@ -271,8 +282,8 @@ export default function OrdersScreen() {
                     <Text style={styles.orderId}>#{order.id.slice(0, 8)}</Text>
                     <Text style={styles.orderDate}>{formatDate(order.created_at)}</Text>
                   </View>
-                  <View style={[styles.statusBadge, order.order_statuses?.name === 'delivered' && styles.status_delivered]}>
-                    <Text style={styles.statusText}>{order.order_statuses?.label || order.order_statuses?.name}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[order.order_statuses?.name]?.bg || '#E5E7EB' }]}>
+                    <Text style={[styles.statusText, { color: STATUS_COLORS[order.order_statuses?.name]?.text || colors.text }]}>{order.order_statuses?.label || order.order_statuses?.name}</Text>
                   </View>
                 </View>
                 <Text style={styles.orderItems}>

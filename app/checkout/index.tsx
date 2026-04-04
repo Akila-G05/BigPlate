@@ -276,7 +276,7 @@ export default function CheckoutScreen() {
       }
 
       clearCart();
-      router.replace('/checkout/confirmation');
+      router.replace({ pathname: '/checkout/confirmation', params: { orderId: order.id } });
     } catch (error: any) {
       showAlert('Order Failed', error.message || 'Could not place order');
     } finally {
