@@ -262,24 +262,13 @@ export default function ProfileDetailsScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => router.push("/auth/login")}
-          >
-            <Ionicons
-              name="lock-closed"
-              size={22}
-              color={colors.textSecondary}
-            />
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/auth/forgot-password")}>
+            <Ionicons name="lock-closed" size={22} color={colors.textSecondary} />
             <View style={{ flex: 1 }}>
               <Text style={styles.menuItemText}>Change Password</Text>
               <Text style={styles.menuSubText}>Update your password</Text>
             </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={colors.textSecondary}
-            />
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.menuItem}

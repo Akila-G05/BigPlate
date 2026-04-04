@@ -54,17 +54,44 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     const loadSettings = async () => {
+      let localData = null;
       const data = await AsyncStorage.getItem(SETTINGS_KEY);
-      if (data) setSettings(JSON.parse(data));
+      if (data) localData = JSON.parse(data);
+
+      if (user) {
+        try {
+          const { data: dbData } = await supabase.from('users').select('push_notifications, email_notifications, sms_notifications').eq('id', user.id).single();
+          if (dbData) {
+            setSettings({
+              pushNotifs: dbData.push_notifications ?? true,
+              emailNotifs: dbData.email_notifications ?? false,
+              smsNotifs: dbData.sms_notifications ?? false,
+              locationServices: localData?.locationServices ?? true,
+            });
+          } else if (localData) {
+            setSettings(localData);
+          }
+        } catch {
+          if (localData) setSettings(localData);
+        }
+      } else if (localData) {
+        setSettings(localData);
+      }
     };
     loadSettings();
-  }, []);
+  }, [user]);
 
   const saveSetting = useCallback(async (key: keyof Settings, value: boolean) => {
     const updated = { ...settings, [key]: value };
     setSettings(updated);
     await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
-  }, [settings]);
+
+    // Save to database if logged in
+    if (user) {
+      const dbKey = key === 'pushNotifs' ? 'push_notifications' : key === 'emailNotifs' ? 'email_notifications' : 'sms_notifications';
+      await supabase.from('users').update({ [dbKey]: value }).eq('id', user.id);
+    }
+  }, [settings, user]);
 
   const handleClearCache = () => {
     showAlert('Clear Cache', 'This will clear all locally stored data including your cart. Continue?', [
