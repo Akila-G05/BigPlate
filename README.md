@@ -1,50 +1,140 @@
-# Welcome to your Expo app 👋
+# 🍽️ Big Plate - Food Delivery App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A full-featured food delivery application for **Big Plate Restaurant** (Sri Lanka) built with **React Native (Expo)** and **Supabase**.
 
-## Get started
+## ✨ Features
 
-1. Install dependencies
+### 🔐 Authentication & Profile
+- **Sign Up / Login** – Full auth flow with Supabase Auth
+- **Forgot Password** – Email reset link functionality
+- **Profile Details** – Edit name/phone, disabled email field
+- **Address Management** – Add/edit/delete addresses, set default, city dropdown
+- **Sign Out / Delete Account** – Secure logout and data cleanup
 
+### 🍔 Menu & Discovery
+- **Home Screen** – Hero banner, categories, trending items, promo banner
+- **Menu Screen** – Search, category filtering, pull-to-refresh, animations
+- **Item Details** – Full image, description, spice level, prep time, tags, favorites
+- **Favorites** – Save/remove dishes, synced to database
+
+### 🛒 Cart & Checkout
+- **Hybrid Cart** – AsyncStorage for guests, Supabase for logged-in users, auto-merge on login
+- **Branch Selection** – Filters branches by delivery zone (disabled if no delivery)
+- **Delivery Details** – Auto-filled from address, phone, instructions
+- **Promo Codes** – Item-specific validation, minimum order checks, dynamic discount calculation
+- **Payment Methods** – Cash on Delivery, Card (placeholder)
+
+### 📦 Orders & Tracking
+- **Order Placement** – Creates order + items + notification in DB
+- **Order History** – Active & past orders, expandable details, reorder button
+- **Status Tracking** – 5-step flow (Pending → Confirmed → Preparing → On the Way → Delivered)
+- **City-Based ETA** – Dynamic delivery time based on user's location
+
+### ⚙️ Settings & Preferences
+- **Dark Mode** – Full app theme support, persists across sessions
+- **Notification Toggles** – Push, Email, SMS (synced to database)
+- **Clear Cache** – Wipes local data and resets app state
+- **Help / Support** – Contact info, rate app, help center
+
+### 🔔 Notifications
+- **In-App Bell** – Real-time unread count, mark as read, type-specific colors (Order/Promo/System)
+- **Push Notification Setup** – Context provider, token management, Edge Function code ready
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React Native (Expo), Expo Router
+- **Backend:** Supabase (PostgreSQL, Auth, Edge Functions)
+- **State Management:** React Context
+- **Storage:** AsyncStorage (local), Supabase (cloud)
+- **Styling:** StyleSheet, ThemeContext (Dark Mode)
+
+## 📂 Project Structure
+
+```
+app/
+  (tabs)/          # Main tabs (Home, Menu, Cart, Orders, Profile)
+  auth/            # Login, Signup, Forgot Password
+  checkout/        # Checkout flow, Order Confirmation
+  item/            # Item Detail screen
+  profile/         # Profile Details screen
+  address/         # Address Management
+  favorites/       # Favorites list
+  promotions/      # Deals & promo codes
+  notifications/   # In-app notifications
+  settings/        # App settings & toggles
+
+src/
+  context/         # Auth, Cart, Theme, Notifications, Push Notifications
+  lib/             # Supabase client, database helpers
+  components/      # FoodImage, Skeleton, CustomAlert
+  types/           # TypeScript interfaces & constants
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- Expo Go app on your physical device
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/akilagimhana2005-cmyk/big-plate.git
+   cd big-plate
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. **Start the app**
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+4. **Scan the QR code** with the Expo Go app on your phone.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🗄️ Database Setup
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+1. Go to your Supabase project dashboard.
+2. Run the SQL files located in the project root:
+   - `supabase-schema.sql` (Main tables & seed data)
+   - `supabase-cart.sql` (Cart table)
+   - `supabase-cities-branches.sql` (Cities, branches, delivery zones)
+   - `supabase-order-notification-trigger.sql` (Order status trigger)
+   - `supabase-notifications.sql` (Notifications table)
+   - `supabase-seed-notifications.sql` (Sample notifications)
 
-## Get a fresh project
+## 📱 Push Notifications (Setup Guide)
 
-When you're ready, run:
+To enable push notifications, you need to deploy the Supabase Edge Function.
 
-```bash
-npm run reset-project
-```
+1. **Install Supabase CLI**
+   ```bash
+   npm install -g supabase
+   ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. **Login and Link Project**
+   ```bash
+   supabase login
+   supabase link --project-ref <your-project-ref>
+   ```
 
-## Learn more
+3. **Deploy the Function**
+   ```bash
+   supabase functions deploy send-push-notification
+   ```
 
-To learn more about developing your project with Expo, look at the following resources:
+4. **Run the Database Trigger SQL**
+   (See the "Step 6" section in the project documentation).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 🤝 Contributing
 
-## Join the community
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-Join our community of developers creating universal apps.
+## 📄 License
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+This project is private and proprietary.
