@@ -38,6 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('users')
         .insert({ id: data.user.id, name, email, phone });
       if (profileError) throw profileError;
+
+      // Create welcome notification
+      await supabase.from('notifications').insert({
+        user_id: data.user.id,
+        title: 'Welcome to Big Plate! 🍽️',
+        message: 'Thanks for joining us. Enjoy exclusive deals and fast delivery.',
+        type: 'system',
+      });
     }
   }, []);
 

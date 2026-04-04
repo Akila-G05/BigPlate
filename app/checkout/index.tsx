@@ -254,6 +254,14 @@ export default function CheckoutScreen() {
 
       if (itemsError) throw itemsError;
 
+      // Create notification for new order
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        title: 'Order Placed! 🎉',
+        message: `Your order #${order.id.slice(0, 8)} has been placed successfully.`,
+        type: 'order',
+      });
+
       clearCart();
       router.replace('/checkout/confirmation');
     } catch (error: any) {
