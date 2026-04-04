@@ -129,72 +129,78 @@ export default function OrdersScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[APP_COLORS.primary]} tintColor={APP_COLORS.primary} />}>
-        {activeOrders.length > 0 && activeOrder && (
+        {activeOrders.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active Order</Text>
-            <TouchableOpacity
-              style={styles.activeOrderCard}
-              onPress={() => setSelectedOrder(selectedOrder === activeOrder.id ? null : activeOrder.id)}
-            >
-              <View style={styles.activeOrderHeader}>
-                <View>
-                  <Text style={styles.activeOrderId}>#{activeOrder.id.slice(0, 8)}</Text>
-                  <Text style={styles.activeOrderBranch}>{activeOrder.branch}</Text>
-                </View>
-                <View style={styles.liveBadge}>
-                  <View style={styles.liveDot} />
-                  <Text style={styles.liveText}>LIVE</Text>
-                </View>
-              </View>
-
-              <View style={styles.progressSteps}>
-                {ORDER_STATUSES.map((step, index) => {
-                  const statusKeys = ORDER_STATUSES.map((s) => s.key);
-                  const currentIndex = statusKeys.indexOf(activeOrder.status);
-                  const isActive = index <= currentIndex;
-                  const isCurrent = index === currentIndex;
-
-                  return (
-                    <View key={step.key} style={styles.stepItem}>
-                      <View style={[styles.stepDot, isActive && styles.stepDotActive, isCurrent && styles.stepDotCurrent]}>
-                        <Ionicons name={step.icon as any} size={16} color={isActive ? '#FFF' : APP_COLORS.textSecondary} />
+            <Text style={styles.sectionTitle}>Active Orders</Text>
+            {activeOrders.map((order) => {
+              const statusKeys = ORDER_STATUSES.map((s) => s.key);
+              const currentIndex = statusKeys.indexOf(order.status);
+              return (
+                <View key={order.id} style={{ marginBottom: 16 }}>
+                  <TouchableOpacity
+                    style={styles.activeOrderCard}
+                    onPress={() => setSelectedOrder(selectedOrder === order.id ? null : order.id)}
+                  >
+                    <View style={styles.activeOrderHeader}>
+                      <View>
+                        <Text style={styles.activeOrderId}>#{order.id.slice(0, 8)}</Text>
+                        <Text style={styles.activeOrderBranch}>{order.branch}</Text>
                       </View>
-                      <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>{step.label}</Text>
-                      {index < ORDER_STATUSES.length - 1 && (
-                        <View style={[styles.stepLine, index < currentIndex && styles.stepLineActive]} />
-                      )}
+                      <View style={styles.liveBadge}>
+                        <View style={styles.liveDot} />
+                        <Text style={styles.liveText}>{order.status}</Text>
+                      </View>
                     </View>
-                  );
-                })}
-              </View>
 
-              <View style={styles.activeOrderFooter}>
-                <View>
-                  <Text style={styles.etaLabel}>Estimated Delivery</Text>
-                  <Text style={styles.etaValue}>{deliveryTime}-{deliveryTime + 10} min</Text>
-                </View>
-                <Ionicons name={selectedOrder === activeOrder.id ? 'chevron-up' : 'chevron-down'} size={24} color={APP_COLORS.textSecondary} />
-              </View>
-            </TouchableOpacity>
+                    <View style={styles.progressSteps}>
+                      {ORDER_STATUSES.map((step, index) => {
+                        const isActive = index <= currentIndex;
+                        const isCurrent = index === currentIndex;
 
-            {selectedOrder === activeOrder.id && (
-              <View style={styles.orderDetails}>
-                {activeOrder.order_items?.map((item) => (
-                  <View key={item.id} style={styles.detailItem}>
-                    <Text style={styles.detailItemName}>{item.name} x{item.quantity}</Text>
-                    <Text style={styles.detailItemPrice}>Rs. {(item.price * item.quantity).toLocaleString()}</Text>
-                  </View>
-                ))}
-                <View style={styles.detailTotal}>
-                  <Text style={styles.detailTotalLabel}>Total</Text>
-                  <Text style={styles.detailTotalValue}>Rs. {activeOrder.total.toLocaleString()}</Text>
+                        return (
+                          <View key={step.key} style={styles.stepItem}>
+                            <View style={[styles.stepDot, isActive && styles.stepDotActive, isCurrent && styles.stepDotCurrent]}>
+                              <Ionicons name={step.icon as any} size={16} color={isActive ? '#FFF' : APP_COLORS.textSecondary} />
+                            </View>
+                            <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>{step.label}</Text>
+                            {index < ORDER_STATUSES.length - 1 && (
+                              <View style={[styles.stepLine, index < currentIndex && styles.stepLineActive]} />
+                            )}
+                          </View>
+                        );
+                      })}
+                    </View>
+
+                    <View style={styles.activeOrderFooter}>
+                      <View>
+                        <Text style={styles.etaLabel}>Estimated Delivery</Text>
+                        <Text style={styles.etaValue}>{deliveryTime}-{deliveryTime + 10} min</Text>
+                      </View>
+                      <Ionicons name={selectedOrder === order.id ? 'chevron-up' : 'chevron-down'} size={24} color={APP_COLORS.textSecondary} />
+                    </View>
+                  </TouchableOpacity>
+
+                  {selectedOrder === order.id && (
+                    <View style={styles.orderDetails}>
+                      {order.order_items?.map((item) => (
+                        <View key={item.id} style={styles.detailItem}>
+                          <Text style={styles.detailItemName}>{item.name} x{item.quantity}</Text>
+                          <Text style={styles.detailItemPrice}>Rs. {(item.price * item.quantity).toLocaleString()}</Text>
+                        </View>
+                      ))}
+                      <View style={styles.detailTotal}>
+                        <Text style={styles.detailTotalLabel}>Total</Text>
+                        <Text style={styles.detailTotalValue}>Rs. {order.total.toLocaleString()}</Text>
+                      </View>
+                      <TouchableOpacity style={styles.callButton}>
+                        <Ionicons name="call" size={18} color="#FFF" />
+                        <Text style={styles.callButtonText}>Call Restaurant</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
-                <TouchableOpacity style={styles.callButton}>
-                  <Ionicons name="call" size={18} color="#FFF" />
-                  <Text style={styles.callButtonText}>Call Restaurant</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              );
+            })}
           </View>
         )}
 
