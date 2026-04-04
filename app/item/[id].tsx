@@ -1,22 +1,25 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
 import { APP_COLORS } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
+import { supabase } from '../../src/lib/supabaseClient';
 import { FoodImage } from '../../src/components/FoodImage';
 
-const ITEM_DETAILS: Record<string, { description: string; spice: string; prepTime: string; tags: string[] }> = {
-  '1': { description: 'Our signature massive stacked burger with premium toppings, special sauce, and fresh ingredients. This is the ultimate burger experience.', spice: 'Mild', prepTime: '15-20 min', tags: ['Beef', 'Signature', 'Bestseller'] },
-  '2': { description: 'Classic beef burger with our special Big Plate sauce, fresh lettuce, tomatoes, and melted cheese.', spice: 'Mild', prepTime: '10-15 min', tags: ['Beef', 'Classic'] },
-  '3': { description: 'Loaded chicken submarine with fresh veggies, melted cheese, and our signature dressing in a fresh baked sub roll.', spice: 'Medium', prepTime: '10-15 min', tags: ['Chicken', 'New'] },
-  '4': { description: 'Spicy Indo-Chinese devilled chicken with peppers, onions, and our secret spice blend. A customer favorite.', spice: 'Hot', prepTime: '15-20 min', tags: ['Chicken', 'Spicy', 'Chinese'] },
-  '5': { description: 'Wok-fried rice with tender chicken pieces and fresh vegetables in our signature sauce.', spice: 'Mild', prepTime: '15 min', tags: ['Chicken', 'Rice'] },
-  '6': { description: 'Aromatic basmati rice cooked with perfectly spiced chicken, saffron, and premium spices.', spice: 'Medium', prepTime: '20-25 min', tags: ['Chicken', 'Indian', 'Rice'] },
-  '7': { description: 'Chopped roti stir-fried with tender chicken, fresh vegetables, and aromatic Sri Lankan spices.', spice: 'Medium', prepTime: '15-20 min', tags: ['Chicken', 'Sri Lankan'] },
-  '8': { description: 'Fresh baked garlic naan bread from our tandoor oven. Perfect with any curry.', spice: 'Mild', prepTime: '5-10 min', tags: ['Bread', 'Indian'] },
-  '9': { description: 'Spicy stir-fried beef with bell peppers, onions, and our signature chilli sauce.', spice: 'Hot', prepTime: '15-20 min', tags: ['Beef', 'Spicy', 'Chinese'] },
-  '10': { description: 'Creamy yogurt mango smoothie made with real mango pulp and a hint of cardamom.', spice: 'None', prepTime: '5 min', tags: ['Drink', 'Sweet'] },
+type MenuItem = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category_id: string;
+  is_trending: boolean;
+  is_new: boolean;
+  discount: number;
+  spice_level: string;
+  prep_time: string;
+  tags: string[];
 };
 
 export default function ItemDetailScreen() {
@@ -24,30 +27,64 @@ export default function ItemDetailScreen() {
   const params = useLocalSearchParams();
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [item, setItem] = useState<MenuItem | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const item = {
-    id: params.id as string,
-    name: params.name as string,
-    description: params.description as string,
-    price: Number(params.price),
-    image: params.image as string,
-    category_id: params.category_id as string,
-    is_trending: params.is_trending === 'true',
-  };
+  useEffect(() => {
+    const fetchItem = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('*')
+          .eq('id', params.id)
+          .single();
 
-  const details = ITEM_DETAILS[item.id];
-  const spiceColor = details?.spice === 'Hot' ? '#EF4444' : details?.spice === 'Medium' ? '#F59E0B' : '#10B981';
+        if (error) throw error;
+        setItem(data);
+      } catch (error) {
+        console.error('Failed to fetch item:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchItem();
+  }, [params.id]);
 
   const handleAddToCart = () => {
+    if (!item) return;
     for (let i = 0; i < quantity; i++) {
       addToCart(item);
     }
     router.back();
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={APP_COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (!item) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Item Not Found</Text>
+          <View style={{ width: 40 }} />
+        </View>
+      </View>
+    );
+  }
+
+  const spiceColor = item.spice_level === 'Hot' ? '#EF4444' : item.spice_level === 'Medium' ? '#F59E0B' : '#10B981';
+
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
@@ -57,28 +94,24 @@ export default function ItemDetailScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Image */}
         <Image source={{ uri: item.image }} style={styles.itemDetailImage} />
 
-        {/* Info */}
         <View style={styles.infoSection}>
           <Text style={styles.itemName}>{item.name}</Text>
 
-          {details && (
-            <View style={styles.tagsRow}>
-              <View style={[styles.spiceBadge, { backgroundColor: spiceColor + '20' }]}>
-                <Text style={[styles.spiceText, { color: spiceColor }]}>{details.spice}</Text>
-              </View>
-              <View style={styles.tag}>
-                <Ionicons name="time" size={14} color={APP_COLORS.textSecondary} />
-                <Text style={styles.tagText}>{details.prepTime}</Text>
-              </View>
+          <View style={styles.tagsRow}>
+            <View style={[styles.spiceBadge, { backgroundColor: spiceColor + '20' }]}>
+              <Text style={[styles.spiceText, { color: spiceColor }]}>{item.spice_level}</Text>
             </View>
-          )}
+            <View style={styles.tag}>
+              <Ionicons name="time" size={14} color={APP_COLORS.textSecondary} />
+              <Text style={styles.tagText}>{item.prep_time}</Text>
+            </View>
+          </View>
 
           <Text style={styles.itemPrice}>Rs. {item.price.toLocaleString()}</Text>
 
-          {item.discount && (
+          {item.discount > 0 && (
             <View style={styles.discountRow}>
               <View style={styles.discountBadge}>
                 <Text style={styles.discountText}>{item.discount}% OFF</Text>
@@ -89,14 +122,18 @@ export default function ItemDetailScreen() {
             </View>
           )}
 
-          {details && (
+          {item.description && (
             <>
               <Text style={styles.sectionLabel}>Description</Text>
-              <Text style={styles.description}>{details.description}</Text>
+              <Text style={styles.description}>{item.description}</Text>
+            </>
+          )}
 
+          {item.tags && item.tags.length > 0 && (
+            <>
               <Text style={styles.sectionLabel}>Tags</Text>
               <View style={styles.tagsContainer}>
-                {details.tags.map((tag) => (
+                {item.tags.map((tag) => (
                   <View key={tag} style={styles.tagChip}>
                     <Text style={styles.tagChipText}>{tag}</Text>
                   </View>
@@ -104,10 +141,16 @@ export default function ItemDetailScreen() {
               </View>
             </>
           )}
+
+          {item.is_new && (
+            <View style={styles.newBadgeInline}>
+              <Ionicons name="sparkles" size={16} color="#FFF" />
+              <Text style={styles.newTextInline}>New Item</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
-      {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <View style={styles.quantityControl}>
           <TouchableOpacity
@@ -137,6 +180,7 @@ export default function ItemDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: APP_COLORS.background },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: APP_COLORS.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -170,6 +214,8 @@ const styles = StyleSheet.create({
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tagChip: { backgroundColor: '#F3F4F6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   tagChipText: { fontSize: 13, color: APP_COLORS.textSecondary, fontWeight: '500' },
+  newBadgeInline: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: APP_COLORS.success, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, alignSelf: 'flex-start', marginTop: 16 },
+  newTextInline: { color: '#FFF', fontSize: 13, fontWeight: '600' },
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
