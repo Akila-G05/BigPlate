@@ -11,8 +11,9 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useLocalSearchParams } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { APP_COLORS } from "../../src/constants";
 import { useCart } from "../../src/context/CartContext";
 import { supabase } from "../../src/lib/supabaseClient";
@@ -115,14 +116,24 @@ function AnimatedItemCard({
 
 export default function MenuScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(params.category as string || null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const { addToCart } = useCart();
+
+  useFocusEffect(
+    useCallback(() => {
+      AsyncStorage.getItem('menu_category').then((catId) => {
+        if (catId) {
+          setSelectedCategory(catId);
+          AsyncStorage.removeItem('menu_category');
+        }
+      });
+    }, [])
+  );
 
   const fetchData = async () => {
     try {
