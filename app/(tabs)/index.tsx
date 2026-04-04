@@ -83,14 +83,10 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Deliver to</Text>
+          <Text style={styles.greeting}>Welcome to</Text>
           <TouchableOpacity style={styles.branchSelector}>
-            <Text style={styles.branchName}>Colombo 03</Text>
-            <Ionicons
-              name="chevron-down"
-              size={16}
-              color={APP_COLORS.primary}
-            />
+            <Text style={styles.branchName}>BigPlate</Text>
+            <Ionicons name="restaurant" size={16} color={APP_COLORS.primary} />
           </TouchableOpacity>
         </View>
         <TouchableOpacity

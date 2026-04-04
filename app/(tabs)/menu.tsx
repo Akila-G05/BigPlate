@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   categoryChipImage: { marginRight: 6, overflow: "hidden" },
   categoryText: { fontSize: 13, color: APP_COLORS.textSecondary },
   categoryTextActive: { color: "#FFF", fontWeight: "600" },
-  list: { paddingHorizontal: 20, paddingBottom: 800 },
+  list: { paddingHorizontal: 20, paddingBottom: 200, marginBottom: 500 },
   itemCard: {
     flexDirection: "row",
     backgroundColor: "#FFF",
