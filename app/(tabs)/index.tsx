@@ -22,7 +22,6 @@ type MenuItem = { id: string; name: string; description: string; price: number; 
 export default function HomeScreen() {
   const router = useRouter();
   const { addToCart, itemCount } = useCart();
-  const [selectedBranch, setSelectedBranch] = useState('Colombo 03');
   const [categories, setCategories] = useState<Category[]>([]);
   const [trendingItems, setTrendingItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +67,7 @@ export default function HomeScreen() {
         <View>
           <Text style={styles.greeting}>Deliver to</Text>
           <TouchableOpacity style={styles.branchSelector}>
-            <Text style={styles.branchName}>{selectedBranch}</Text>
+            <Text style={styles.branchName}>Colombo 03</Text>
             <Ionicons name="chevron-down" size={16} color={APP_COLORS.primary} />
           </TouchableOpacity>
         </View>

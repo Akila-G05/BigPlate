@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ import { APP_COLORS } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
+type City = { id: string; name: string; delivery_time_minutes: number; delivery_fee: number };
 type Address = {
   id: string;
   label: string;
@@ -29,14 +31,21 @@ export default function AddressScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showCityPicker, setShowCityPicker] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [label, setLabel] = useState('');
   const [line1, setLine1] = useState('');
   const [line2, setLine2] = useState('');
-  const [city, setCity] = useState('');
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const fetchCities = useCallback(async () => {
+    const { data } = await supabase.from('cities').select('*').eq('is_active', true).order('name', { ascending: true });
+    if (data) setCities(data);
+  }, []);
 
   const fetchAddresses = useCallback(async () => {
     if (!user) return;
@@ -57,8 +66,9 @@ export default function AddressScreen() {
   }, [user]);
 
   useEffect(() => {
+    fetchCities();
     fetchAddresses();
-  }, [fetchAddresses]);
+  }, [fetchCities, fetchAddresses]);
 
   if (!user) {
     return (
@@ -86,9 +96,10 @@ export default function AddressScreen() {
     setLabel('');
     setLine1('');
     setLine2('');
-    setCity('');
+    setSelectedCity(null);
     setEditingAddress(null);
     setShowForm(false);
+    setShowCityPicker(false);
   };
 
   const handleEdit = (address: Address) => {
@@ -96,7 +107,8 @@ export default function AddressScreen() {
     setLabel(address.label);
     setLine1(address.line1);
     setLine2(address.line2 || '');
-    setCity(address.city);
+    const city = cities.find((c) => c.name === address.city);
+    setSelectedCity(city || null);
     setShowForm(true);
   };
 
@@ -120,7 +132,7 @@ export default function AddressScreen() {
   };
 
   const handleSave = async () => {
-    if (!label.trim() || !line1.trim() || !city.trim()) {
+    if (!label.trim() || !line1.trim() || !selectedCity) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -130,7 +142,7 @@ export default function AddressScreen() {
       if (editingAddress) {
         const { error } = await supabase
           .from('addresses')
-          .update({ label, line1, line2: line2 || null, city })
+          .update({ label, line1, line2: line2 || null, city: selectedCity.name })
           .eq('id', editingAddress.id);
         if (error) throw error;
       } else {
@@ -141,7 +153,7 @@ export default function AddressScreen() {
             label,
             line1,
             line2: line2 || null,
-            city,
+            city: selectedCity.name,
             is_default: addresses.length === 0,
           });
         if (error) throw error;
@@ -259,6 +271,7 @@ export default function AddressScreen() {
         )}
       </ScrollView>
 
+      {/* Add/Edit Modal */}
       <Modal visible={showForm} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -313,13 +326,13 @@ export default function AddressScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>City *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Colombo 03"
-                  value={city}
-                  onChangeText={setCity}
-                  placeholderTextColor={APP_COLORS.textSecondary}
-                />
+                <TouchableOpacity style={styles.cityPicker} onPress={() => setShowCityPicker(true)}>
+                  <Ionicons name="location" size={20} color={APP_COLORS.textSecondary} />
+                  <Text style={[styles.cityPickerText, !selectedCity && styles.cityPickerPlaceholder]}>
+                    {selectedCity ? selectedCity.name : 'Select your city'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color={APP_COLORS.textSecondary} />
+                </TouchableOpacity>
               </View>
 
               <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
@@ -332,6 +345,44 @@ export default function AddressScreen() {
                 )}
               </TouchableOpacity>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* City Picker Modal */}
+      <Modal visible={showCityPicker} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.cityPickerModal}>
+            <View style={styles.cityPickerHeader}>
+              <Text style={styles.cityPickerTitle}>Select City</Text>
+              <TouchableOpacity onPress={() => setShowCityPicker(false)}>
+                <Ionicons name="close" size={24} color={APP_COLORS.text} />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={cities}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.cityItem, selectedCity?.id === item.id && styles.cityItemSelected]}
+                  onPress={() => {
+                    setSelectedCity(item);
+                    setShowCityPicker(false);
+                  }}
+                >
+                  <Ionicons name="location" size={20} color={APP_COLORS.primary} />
+                  <Text style={[styles.cityName, selectedCity?.id === item.id && styles.cityNameSelected]}>
+                    {item.name}
+                  </Text>
+                  <Text style={styles.cityDeliveryInfo}>
+                    {item.delivery_time_minutes} min • Rs. {item.delivery_fee}
+                  </Text>
+                  {selectedCity?.id === item.id && (
+                    <Ionicons name="checkmark-circle" size={22} color={APP_COLORS.primary} />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
           </View>
         </View>
       </Modal>
@@ -412,6 +463,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: APP_COLORS.text,
   },
+  cityPicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: APP_COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  cityPickerText: { flex: 1, fontSize: 16, color: APP_COLORS.text },
+  cityPickerPlaceholder: { color: APP_COLORS.textSecondary },
   saveButton: {
     backgroundColor: APP_COLORS.primary,
     borderRadius: 14,
@@ -421,4 +485,32 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   saveButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  cityPickerModal: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '70%',
+    paddingBottom: 24,
+  },
+  cityPickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: APP_COLORS.border,
+  },
+  cityPickerTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
+  cityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: APP_COLORS.border,
+    gap: 12,
+  },
+  cityItemSelected: { backgroundColor: '#FFF5F5' },
+  cityName: { flex: 1, fontSize: 16, color: APP_COLORS.text },
+  cityNameSelected: { fontWeight: '600', color: APP_COLORS.primary },
+  cityDeliveryInfo: { fontSize: 12, color: APP_COLORS.textSecondary },
 });

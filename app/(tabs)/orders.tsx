@@ -14,7 +14,7 @@ const ORDER_STATUSES = [
 ];
 
 type OrderItem = { id: string; order_id: string; menu_item_id: string; name: string; quantity: number; price: number };
-type Order = { id: string; user_id: string; branch: string; status: string; total: number; delivery_fee: number; payment_method: string; delivery_name: string; delivery_phone: string; delivery_address: string; delivery_instructions: string; created_at: string; order_items: OrderItem[] };
+type Order = { id: string; user_id: string; branch: string; city: string; status: string; total: number; delivery_fee: number; payment_method: string; delivery_name: string; delivery_phone: string; delivery_address: string; delivery_instructions: string; created_at: string; order_items: OrderItem[] };
 
 export default function OrdersScreen() {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function OrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [deliveryTime, setDeliveryTime] = useState(30);
 
   const fetchOrders = async () => {
     if (!user) {
@@ -39,6 +40,15 @@ export default function OrdersScreen() {
 
       if (error) throw error;
       setOrders(data || []);
+
+      if (data && data.length > 0 && data[0].city) {
+        const { data: cityData } = await supabase
+          .from('cities')
+          .select('delivery_time_minutes')
+          .eq('name', data[0].city)
+          .single();
+        if (cityData) setDeliveryTime(cityData.delivery_time_minutes);
+      }
     } catch (error) {
       console.error('Failed to fetch orders:', error);
     } finally {
@@ -161,7 +171,7 @@ export default function OrdersScreen() {
               <View style={styles.activeOrderFooter}>
                 <View>
                   <Text style={styles.etaLabel}>Estimated Delivery</Text>
-                  <Text style={styles.etaValue}>25-35 min</Text>
+                  <Text style={styles.etaValue}>{deliveryTime}-{deliveryTime + 10} min</Text>
                 </View>
                 <Ionicons name={selectedOrder === activeOrder.id ? 'chevron-up' : 'chevron-down'} size={24} color={APP_COLORS.textSecondary} />
               </View>
