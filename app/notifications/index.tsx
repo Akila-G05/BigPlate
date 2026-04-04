@@ -7,10 +7,10 @@ import { useNotifications } from '../../src/context/NotificationContext';
 import { useAuth } from '../../src/context/AuthContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 
-const NOTIF_COLORS: Record<string, { icon: string; bg: string; dot: string }> = {
-  order: { icon: '#3B82F6', bg: '#DBEAFE', dot: '#3B82F6' },
-  promo: { icon: '#F59E0B', bg: '#FEF3C7', dot: '#F59E0B' },
-  system: { icon: '#6B7280', bg: '#F3F4F6', dot: '#6B7280' },
+const NOTIF_COLORS: Record<string, { icon: string }> = {
+  order: { icon: '#3B82F6' },
+  promo: { icon: '#F59E0B' },
+  system: { icon: '#6B7280' },
 };
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
@@ -22,12 +22,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   list: { padding: 20, paddingBottom: 100 },
   notifCard: { flexDirection: 'row', backgroundColor: c.card, borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: c.border, gap: 12 },
   notifCardUnread: { borderColor: APP_COLORS.primary, backgroundColor: 'rgba(230, 57, 70, 0.05)' },
-  iconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  iconContainer: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
   notifContent: { flex: 1 },
   notifHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   notifTitle: { fontSize: 15, fontWeight: '600', color: c.text },
   notifTitleUnread: { fontWeight: '700' },
-  unreadDot: { width: 8, height: 8, borderRadius: 4 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: APP_COLORS.primary },
   notifMessage: { fontSize: 13, color: c.textSecondary, lineHeight: 18, marginBottom: 4 },
   notifTime: { fontSize: 12, color: c.textSecondary },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 80 },
@@ -139,7 +139,7 @@ export default function NotificationsScreen() {
               style={[styles.notifCard, isUnread && styles.notifCardUnread]}
               onPress={() => markAsRead(item.id)}
             >
-              <View style={[styles.iconContainer, { backgroundColor: nc.bg }]}>
+              <View style={styles.iconContainer}>
                 <Ionicons name={getIcon(item.type) as any} size={22} color={nc.icon} />
               </View>
               <View style={styles.notifContent}>
@@ -147,7 +147,7 @@ export default function NotificationsScreen() {
                   <Text style={[styles.notifTitle, isUnread && styles.notifTitleUnread]}>
                     {item.title}
                   </Text>
-                  {isUnread && <View style={[styles.unreadDot, { backgroundColor: nc.dot }]} />}
+                  {isUnread && <View style={styles.unreadDot} />}
                 </View>
                 <Text style={styles.notifMessage} numberOfLines={2}>
                   {item.message}
