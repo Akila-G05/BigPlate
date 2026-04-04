@@ -85,7 +85,7 @@ export default function OrderConfirmationScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.successIcon}>
-          <Ionicons name="checkmark-circle" size={80} color={STATUS_COLORS.pending.icon} />
+          <Ionicons name="checkmark-circle" size={80} color={STATUS_COLORS.delivered.icon} />
         </View>
         <Text style={styles.title}>Order Placed!</Text>
         <Text style={styles.subtitle}>
