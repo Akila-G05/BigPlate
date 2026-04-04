@@ -109,7 +109,9 @@ export default function OrdersScreen() {
       if (ordersData) {
         const ordersWithStatus = ordersData.map((order) => ({
           ...order,
-          order_statuses: statusesData?.find((s) => s.id === order.status_id) || null,
+          order_statuses: order.status_id
+            ? statusesData?.find((s) => s.id === order.status_id) || null
+            : statusesData?.[0] || null,
         }));
         setOrders(ordersWithStatus as Order[]);
       }

@@ -218,11 +218,11 @@ export default function CheckoutScreen() {
       const fullAddress = userAddress.line1 + (userAddress.line2 ? ', ' + userAddress.line2 : '') + ', ' + userAddress.city;
       const branch = branches.find((b) => b.id === selectedBranch);
 
-      // Get the confirmed status ID
+      // Get the pending status ID
       const { data: statusData } = await supabase
         .from('order_statuses')
         .select('id')
-        .eq('name', 'confirmed')
+        .eq('name', 'pending')
         .single();
 
       const { data: order, error: orderError } = await supabase

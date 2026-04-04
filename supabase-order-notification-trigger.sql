@@ -1,30 +1,28 @@
--- Create a function to auto-generate notifications when order status changes
+-- Update the notification trigger to include Pending
 create or replace function notify_order_status_change()
 returns trigger as $$
+declare
+  status_label text;
 begin
-  if OLD.status is distinct from NEW.status then
+  -- Get the label of the new status
+  select label into status_label from order_statuses where id = NEW.status_id;
+  
+  if OLD.status_id is distinct from NEW.status_id then
     insert into notifications (user_id, title, message, type)
     values (
       NEW.user_id,
       case
-        when NEW.status = 'confirmed' then 'Order Confirmed ✓'
-        when NEW.status = 'preparing' then 'Order Being Prepared 🍳'
-        when NEW.status = 'delivering' then 'Order On The Way 🚴'
-        when NEW.status = 'delivered' then 'Order Delivered 🎉'
-        when NEW.status = 'cancelled' then 'Order Cancelled'
+        when status_label = 'Pending' then 'Order Received ⏳'
+        when status_label = 'Confirmed' then 'Order Confirmed ✓'
+        when status_label = 'Preparing' then 'Order Being Prepared 🍳'
+        when status_label = 'On the Way' then 'Order On The Way 🚴'
+        when status_label = 'Delivered' then 'Order Delivered 🎉'
         else 'Order Update'
       end,
-      'Your order #' || substring(NEW.id::text, 1, 8) || ' is now ' || NEW.status || '.',
+      'Your order #' || substring(NEW.id::text, 1, 8) || ' is now ' || status_label || '.',
       'order'
     );
   end if;
   return NEW;
 end;
 $$ language plpgsql;
-
--- Attach the trigger to the orders table
-drop trigger if exists order_status_notification on orders;
-create trigger order_status_notification
-  after update on orders
-  for each row
-  execute function notify_order_status_change();
