@@ -137,20 +137,19 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <View style={styles.profileHeader}>
-        <TouchableOpacity onPress={() => router.push('/profile/details')}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <Text style={styles.name}>{displayName}</Text>
-          <Text style={styles.email}>{displayEmail}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8, gap: 4 }}>
-            <Text style={{ fontSize: 13, color: APP_COLORS.primary, fontWeight: '600' }}>Edit Profile</Text>
-            <Ionicons name="chevron-forward" size={14} color={APP_COLORS.primary} />
-          </View>
-        </TouchableOpacity>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+        <Text style={styles.name}>{displayName}</Text>
+        <Text style={styles.email}>{displayEmail}</Text>
       </View>
 
       <View style={styles.section}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/profile/details')}>
+          <Ionicons name="person" size={22} color={APP_COLORS.primary} />
+          <Text style={styles.menuItemText}>Edit Profile</Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/address')}>
           <Ionicons name="location" size={22} color={APP_COLORS.primary} />
           <Text style={styles.menuItemText}>My Addresses</Text>
