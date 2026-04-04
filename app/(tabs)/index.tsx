@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { APP_COLORS } from "../../src/constants";
 import { useCart } from "../../src/context/CartContext";
@@ -153,10 +152,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={cat.id}
                   style={styles.categoryItem}
-                  onPress={async () => {
-                    await AsyncStorage.setItem('menu_category', cat.id);
-                    router.push("/(tabs)/menu");
-                  }}
+                  onPress={() => router.push({ pathname: "/(tabs)/menu", params: { category: cat.id } })}
                 >
                   <FoodImage uri={cat.image} size={64} borderRadius={16} />
                   <Text style={styles.categoryName}>{cat.name}</Text>
