@@ -7,10 +7,10 @@ import { useNotifications } from '../../src/context/NotificationContext';
 import { useAuth } from '../../src/context/AuthContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 
-const NOTIF_COLORS: Record<string, { icon: string; bg: string }> = {
-  order: { icon: '#3B82F6', bg: '#DBEAFE' },
-  promo: { icon: '#F59E0B', bg: '#FEF3C7' },
-  system: { icon: '#6B7280', bg: '#F3F4F6' },
+const NOTIF_COLORS: Record<string, { icon: string; bg: string; border: string; dot: string }> = {
+  order: { icon: '#3B82F6', bg: '#DBEAFE', border: '#93C5FD', dot: '#3B82F6' },
+  promo: { icon: '#F59E0B', bg: '#FEF3C7', border: '#FCD34D', dot: '#F59E0B' },
+  system: { icon: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB', dot: '#6B7280' },
 };
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
@@ -21,13 +21,13 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   markAllText: { fontSize: 14, color: APP_COLORS.primary, fontWeight: '600' },
   list: { padding: 20, paddingBottom: 100 },
   notifCard: { flexDirection: 'row', backgroundColor: c.card, borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: c.border, gap: 12 },
-  notifCardUnread: { borderColor: APP_COLORS.primary, backgroundColor: 'rgba(230, 57, 70, 0.05)' },
+  notifCardUnread: { borderWidth: 2, backgroundColor: 'rgba(0,0,0,0.02)' },
   iconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
   notifContent: { flex: 1 },
   notifHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   notifTitle: { fontSize: 15, fontWeight: '600', color: c.text },
   notifTitleUnread: { fontWeight: '700' },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: APP_COLORS.primary },
+  unreadDot: { width: 8, height: 8, borderRadius: 4 },
   notifMessage: { fontSize: 13, color: c.textSecondary, lineHeight: 18, marginBottom: 4 },
   notifTime: { fontSize: 12, color: c.textSecondary },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 80 },
@@ -132,21 +132,25 @@ export default function NotificationsScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const notifColors = getNotifColors(item.type);
+          const nc = getNotifColors(item.type);
+          const isUnread = !item.is_read;
           return (
             <TouchableOpacity
-              style={[styles.notifCard, !item.is_read && styles.notifCardUnread]}
+              style={[
+                styles.notifCard,
+                isUnread && [styles.notifCardUnread, { borderColor: nc.border, backgroundColor: nc.bg + '40' }],
+              ]}
               onPress={() => markAsRead(item.id)}
             >
-              <View style={[styles.iconContainer, { backgroundColor: notifColors.bg }]}>
-                <Ionicons name={getIcon(item.type) as any} size={22} color={notifColors.icon} />
+              <View style={[styles.iconContainer, { backgroundColor: nc.bg }]}>
+                <Ionicons name={getIcon(item.type) as any} size={22} color={nc.icon} />
               </View>
               <View style={styles.notifContent}>
                 <View style={styles.notifHeader}>
-                  <Text style={[styles.notifTitle, !item.is_read && styles.notifTitleUnread]}>
+                  <Text style={[styles.notifTitle, isUnread && styles.notifTitleUnread]}>
                     {item.title}
                   </Text>
-                  {!item.is_read && <View style={styles.unreadDot} />}
+                  {isUnread && <View style={[styles.unreadDot, { backgroundColor: nc.dot }]} />}
                 </View>
                 <Text style={styles.notifMessage} numberOfLines={2}>
                   {item.message}
