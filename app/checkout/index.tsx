@@ -7,14 +7,18 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS, BRANCHES } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
+import { useAuth } from '../../src/context/AuthContext';
+import { supabase } from '../../src/lib/supabaseClient';
 
 export default function CheckoutScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { items, total, clearCart } = useCart();
   const [branch, setBranch] = useState(BRANCHES[0].id);
   const [name, setName] = useState('');
@@ -22,6 +26,7 @@ export default function CheckoutScreen() {
   const [address, setAddress] = useState('');
   const [instructions, setInstructions] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [loading, setLoading] = useState(false);
 
   if (items.length === 0) {
     return (
@@ -34,7 +39,7 @@ export default function CheckoutScreen() {
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.empty}>
-          <Text style={{ fontSize: 64 }}>🛒</Text>
+          <Ionicons name="cart-outline" size={64} color={APP_COLORS.textSecondary} />
           <Text style={styles.emptyTitle}>Your cart is empty</Text>
         </View>
       </View>
@@ -44,7 +49,7 @@ export default function CheckoutScreen() {
   const deliveryFee = 250;
   const grandTotal = total + deliveryFee;
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter your name');
       return;
@@ -57,9 +62,54 @@ export default function CheckoutScreen() {
       Alert.alert('Error', 'Please enter your delivery address');
       return;
     }
+    if (!user) {
+      Alert.alert('Error', 'Please sign in to place an order');
+      router.replace('/auth/login');
+      return;
+    }
 
-    clearCart();
-    router.replace('/checkout/confirmation');
+    setLoading(true);
+    try {
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          branch: BRANCHES.find((b) => b.id === branch)?.name || branch,
+          total: grandTotal,
+          delivery_fee: deliveryFee,
+          payment_method: paymentMethod,
+          delivery_name: name,
+          delivery_phone: phone,
+          delivery_address: address,
+          delivery_instructions: instructions || null,
+          status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      const orderItems = items.map((item) => ({
+        order_id: order.id,
+        menu_item_id: item.menu_item.id,
+        name: item.menu_item.name,
+        quantity: item.quantity,
+        price: item.menu_item.price,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      clearCart();
+      router.replace('/checkout/confirmation');
+    } catch (error: any) {
+      Alert.alert('Order Failed', error.message || 'Could not place order');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -210,8 +260,12 @@ export default function CheckoutScreen() {
 
       {/* Place Order Button */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder}>
-          <Text style={styles.placeOrderText}>Place Order - Rs. {grandTotal.toLocaleString()}</Text>
+        <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.placeOrderText}>Place Order - Rs. {grandTotal.toLocaleString()}</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>

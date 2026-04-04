@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
+import { useAuth } from '../../src/context/AuthContext';
+import { supabase } from '../../src/lib/supabaseClient';
 
 const ORDER_STATUSES = [
   { key: 'confirmed', label: 'Confirmed', icon: 'checkmark-circle' },
@@ -11,51 +13,88 @@ const ORDER_STATUSES = [
   { key: 'delivered', label: 'Delivered', icon: 'home' },
 ];
 
-const MOCK_ORDERS = [
-  {
-    id: 'ORD-001',
-    date: '2026-04-03',
-    time: '7:30 PM',
-    items: [
-      { name: 'Tower Burger', qty: 1, price: 3100 },
-      { name: 'Devilled Chicken', qty: 1, price: 1100 },
-    ],
-    total: 4200,
-    status: 'preparing',
-    branch: 'Colombo 03',
-    estimatedTime: '25 min',
-  },
-  {
-    id: 'ORD-002',
-    date: '2026-04-02',
-    time: '1:15 PM',
-    items: [
-      { name: 'Chicken Biryani', qty: 2, price: 2100 },
-      { name: 'Garlic Naan', qty: 3, price: 1050 },
-      { name: 'Mango Lassi', qty: 2, price: 900 },
-    ],
-    total: 4050,
-    status: 'delivered',
-    branch: 'Rajagiriya',
-    estimatedTime: '30 min',
-  },
-];
+type OrderItem = { id: string; order_id: string; menu_item_id: string; name: string; quantity: number; price: number };
+type Order = { id: string; user_id: string; branch: string; status: string; total: number; delivery_fee: number; payment_method: string; delivery_name: string; delivery_phone: string; delivery_address: string; delivery_instructions: string; created_at: string; order_items: OrderItem[] };
 
 export default function OrdersScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
-  const [activeOrder, setActiveOrder] = useState(MOCK_ORDERS[0]);
   const [refreshing, setRefreshing] = useState(false);
+
+  const fetchOrders = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [user]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    fetchOrders().then(() => setRefreshing(false));
   }, []);
 
-  const activeOrders = MOCK_ORDERS.filter((o) => o.status !== 'delivered');
-  const pastOrders = MOCK_ORDERS.filter((o) => o.status === 'delivered');
+  const activeOrders = orders.filter((o) => o.status !== 'delivered');
+  const pastOrders = orders.filter((o) => o.status === 'delivered');
+  const activeOrder = activeOrders[0];
 
-  if (MOCK_ORDERS.length === 0) {
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Orders</Text>
+        </View>
+        <View style={styles.empty}>
+          <Ionicons name="receipt-outline" size={64} color={APP_COLORS.textSecondary} />
+          <Text style={styles.emptyTitle}>Sign in to view orders</Text>
+          <TouchableOpacity style={styles.browseButton} onPress={() => router.push('/auth/login')}>
+            <Text style={styles.browseText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Orders</Text>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={APP_COLORS.primary} />
+        </View>
+      </View>
+    );
+  }
+
+  if (orders.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -80,19 +119,16 @@ export default function OrdersScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[APP_COLORS.primary]} tintColor={APP_COLORS.primary} />}>
-        {/* Active Order Tracking */}
-        {activeOrders.length > 0 && (
+        {activeOrders.length > 0 && activeOrder && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Active Order</Text>
             <TouchableOpacity
               style={styles.activeOrderCard}
-              onPress={() =>
-                setSelectedOrder(selectedOrder === activeOrder.id ? null : activeOrder.id)
-              }
+              onPress={() => setSelectedOrder(selectedOrder === activeOrder.id ? null : activeOrder.id)}
             >
               <View style={styles.activeOrderHeader}>
                 <View>
-                  <Text style={styles.activeOrderId}>{activeOrder.id}</Text>
+                  <Text style={styles.activeOrderId}>#{activeOrder.id.slice(0, 8)}</Text>
                   <Text style={styles.activeOrderBranch}>{activeOrder.branch}</Text>
                 </View>
                 <View style={styles.liveBadge}>
@@ -101,43 +137,21 @@ export default function OrdersScreen() {
                 </View>
               </View>
 
-              {/* Progress Steps */}
               <View style={styles.progressSteps}>
                 {ORDER_STATUSES.map((step, index) => {
-                  const currentIndex = ORDER_STATUSES.findIndex((s) => s.key === activeOrder.status);
+                  const statusKeys = ORDER_STATUSES.map((s) => s.key);
+                  const currentIndex = statusKeys.indexOf(activeOrder.status);
                   const isActive = index <= currentIndex;
                   const isCurrent = index === currentIndex;
 
                   return (
                     <View key={step.key} style={styles.stepItem}>
-                      <View
-                        style={[
-                          styles.stepDot,
-                          isActive && styles.stepDotActive,
-                          isCurrent && styles.stepDotCurrent,
-                        ]}
-                      >
-                        <Ionicons
-                          name={step.icon as any}
-                          size={16}
-                          color={isActive ? '#FFF' : APP_COLORS.textSecondary}
-                        />
+                      <View style={[styles.stepDot, isActive && styles.stepDotActive, isCurrent && styles.stepDotCurrent]}>
+                        <Ionicons name={step.icon as any} size={16} color={isActive ? '#FFF' : APP_COLORS.textSecondary} />
                       </View>
-                      <Text
-                        style={[
-                          styles.stepLabel,
-                          isActive && styles.stepLabelActive,
-                        ]}
-                      >
-                        {step.label}
-                      </Text>
+                      <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>{step.label}</Text>
                       {index < ORDER_STATUSES.length - 1 && (
-                        <View
-                          style={[
-                            styles.stepLine,
-                            index < currentIndex && styles.stepLineActive,
-                          ]}
-                        />
+                        <View style={[styles.stepLine, index < currentIndex && styles.stepLineActive]} />
                       )}
                     </View>
                   );
@@ -147,27 +161,18 @@ export default function OrdersScreen() {
               <View style={styles.activeOrderFooter}>
                 <View>
                   <Text style={styles.etaLabel}>Estimated Delivery</Text>
-                  <Text style={styles.etaValue}>{activeOrder.estimatedTime}</Text>
+                  <Text style={styles.etaValue}>25-35 min</Text>
                 </View>
-                <Ionicons
-                  name={selectedOrder === activeOrder.id ? 'chevron-up' : 'chevron-down'}
-                  size={24}
-                  color={APP_COLORS.textSecondary}
-                />
+                <Ionicons name={selectedOrder === activeOrder.id ? 'chevron-up' : 'chevron-down'} size={24} color={APP_COLORS.textSecondary} />
               </View>
             </TouchableOpacity>
 
-            {/* Expanded Order Details */}
             {selectedOrder === activeOrder.id && (
               <View style={styles.orderDetails}>
-                {activeOrder.items.map((item, index) => (
-                  <View key={index} style={styles.detailItem}>
-                    <Text style={styles.detailItemName}>
-                      {item.name} x{item.qty}
-                    </Text>
-                    <Text style={styles.detailItemPrice}>
-                      Rs. {(item.price * item.qty).toLocaleString()}
-                    </Text>
+                {activeOrder.order_items?.map((item) => (
+                  <View key={item.id} style={styles.detailItem}>
+                    <Text style={styles.detailItemName}>{item.name} x{item.quantity}</Text>
+                    <Text style={styles.detailItemPrice}>Rs. {(item.price * item.quantity).toLocaleString()}</Text>
                   </View>
                 ))}
                 <View style={styles.detailTotal}>
@@ -183,7 +188,6 @@ export default function OrdersScreen() {
           </View>
         )}
 
-        {/* Past Orders */}
         {pastOrders.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Past Orders</Text>
@@ -191,15 +195,15 @@ export default function OrdersScreen() {
               <View key={order.id} style={styles.orderCard}>
                 <View style={styles.orderHeader}>
                   <View>
-                    <Text style={styles.orderId}>{order.id}</Text>
-                    <Text style={styles.orderDate}>{order.date} at {order.time}</Text>
+                    <Text style={styles.orderId}>#{order.id.slice(0, 8)}</Text>
+                    <Text style={styles.orderDate}>{formatDate(order.created_at)}</Text>
                   </View>
                   <View style={[styles.statusBadge, styles[`status_${order.status}`]]}>
                     <Text style={styles.statusText}>{order.status}</Text>
                   </View>
                 </View>
                 <Text style={styles.orderItems}>
-                  {order.items.map((i) => `${i.name} x${i.qty}`).join(', ')}
+                  {order.order_items?.map((i) => `${i.name} x${i.quantity}`).join(', ')}
                 </Text>
                 <View style={styles.orderFooter}>
                   <Text style={styles.orderTotal}>Rs. {order.total.toLocaleString()}</Text>
