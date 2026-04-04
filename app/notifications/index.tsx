@@ -21,7 +21,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   markAllText: { fontSize: 14, color: APP_COLORS.primary, fontWeight: '600' },
   list: { padding: 20, paddingBottom: 100 },
   notifCard: { flexDirection: 'row', backgroundColor: c.card, borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: c.border, gap: 12 },
-  notifCardUnread: { borderWidth: 2, backgroundColor: 'rgba(0,0,0,0.02)' },
+  notifCardUnread: { borderWidth: 2 },
   iconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
   notifContent: { flex: 1 },
   notifHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
