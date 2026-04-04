@@ -217,6 +217,14 @@ export default function CheckoutScreen() {
       const userAddress = addresses[0];
       const fullAddress = userAddress.line1 + (userAddress.line2 ? ', ' + userAddress.line2 : '') + ', ' + userAddress.city;
       const branch = branches.find((b) => b.id === selectedBranch);
+
+      // Get the confirmed status ID
+      const { data: statusData } = await supabase
+        .from('order_statuses')
+        .select('id')
+        .eq('name', 'confirmed')
+        .single();
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -230,7 +238,7 @@ export default function CheckoutScreen() {
           delivery_phone: phone,
           delivery_address: fullAddress,
           delivery_instructions: instructions || null,
-          status: 'pending',
+          status_id: statusData?.id,
         })
         .select()
         .single();
