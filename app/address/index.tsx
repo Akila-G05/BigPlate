@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,48 +8,79 @@ import {
   TextInput,
   Alert,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
+import { useAuth } from '../../src/context/AuthContext';
+import { supabase } from '../../src/lib/supabaseClient';
 
-interface Address {
+type Address = {
   id: string;
   label: string;
   line1: string;
   line2: string;
   city: string;
-  isDefault: boolean;
-}
-
-const MOCK_ADDRESSES: Address[] = [
-  {
-    id: '1',
-    label: 'Home',
-    line1: 'No 45, Galle Road',
-    line2: 'Apt 3B, 3rd Floor',
-    city: 'Colombo 03',
-    isDefault: true,
-  },
-  {
-    id: '2',
-    label: 'Office',
-    line1: 'World Trade Center',
-    line2: 'Level 12, Echelon Square',
-    city: 'Colombo 01',
-    isDefault: false,
-  },
-];
+  is_default: boolean;
+};
 
 export default function AddressScreen() {
   const router = useRouter();
-  const [addresses, setAddresses] = useState(MOCK_ADDRESSES);
+  const { user } = useAuth();
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [label, setLabel] = useState('');
   const [line1, setLine1] = useState('');
   const [line2, setLine2] = useState('');
   const [city, setCity] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const fetchAddresses = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('is_default', { ascending: false });
+
+      if (error) throw error;
+      setAddresses(data || []);
+    } catch (error) {
+      console.error('Failed to fetch addresses:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchAddresses();
+  }, [fetchAddresses]);
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Addresses</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.empty}>
+          <Ionicons name="lock-closed-outline" size={64} color={APP_COLORS.textSecondary} />
+          <Text style={styles.emptyTitle}>Sign in required</Text>
+          <Text style={styles.emptySubtitle}>Please sign in to manage your addresses</Text>
+          <TouchableOpacity style={styles.addFirstButton} onPress={() => router.push('/auth/login')}>
+            <Text style={styles.addFirstText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   const resetForm = () => {
     setLabel('');
@@ -64,7 +95,7 @@ export default function AddressScreen() {
     setEditingAddress(address);
     setLabel(address.label);
     setLine1(address.line1);
-    setLine2(address.line2);
+    setLine2(address.line2 || '');
     setCity(address.city);
     setShowForm(true);
   };
@@ -75,45 +106,93 @@ export default function AddressScreen() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => setAddresses((prev) => prev.filter((a) => a.id !== id)),
+        onPress: async () => {
+          try {
+            const { error } = await supabase.from('addresses').delete().eq('id', id);
+            if (error) throw error;
+            setAddresses((prev) => prev.filter((a) => a.id !== id));
+          } catch (error: any) {
+            Alert.alert('Error', error.message);
+          }
+        },
       },
     ]);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!label.trim() || !line1.trim() || !city.trim()) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    if (editingAddress) {
-      setAddresses((prev) =>
-        prev.map((a) =>
-          a.id === editingAddress.id
-            ? { ...a, label, line1, line2, city }
-            : a
-        )
-      );
-    } else {
-      const newAddress: Address = {
-        id: Date.now().toString(),
-        label,
-        line1,
-        line2,
-        city,
-        isDefault: addresses.length === 0,
-      };
-      setAddresses((prev) => [...prev, newAddress]);
+    setSaving(true);
+    try {
+      if (editingAddress) {
+        const { error } = await supabase
+          .from('addresses')
+          .update({ label, line1, line2: line2 || null, city })
+          .eq('id', editingAddress.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('addresses')
+          .insert({
+            user_id: user.id,
+            label,
+            line1,
+            line2: line2 || null,
+            city,
+            is_default: addresses.length === 0,
+          });
+        if (error) throw error;
+      }
+
+      resetForm();
+      fetchAddresses();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Could not save address');
+    } finally {
+      setSaving(false);
     }
-
-    resetForm();
   };
 
-  const setDefault = (id: string) => {
-    setAddresses((prev) =>
-      prev.map((a) => ({ ...a, isDefault: a.id === id }))
+  const setDefault = async (id: string) => {
+    try {
+      await supabase
+        .from('addresses')
+        .update({ is_default: false })
+        .eq('user_id', user.id);
+
+      const { error } = await supabase
+        .from('addresses')
+        .update({ is_default: true })
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchAddresses();
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Addresses</Text>
+          <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
+            <Ionicons name="add" size={24} color={APP_COLORS.primary} />
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={APP_COLORS.primary} />
+        </View>
+      </View>
     );
-  };
+  }
 
   return (
     <View style={styles.container}>
@@ -144,12 +223,12 @@ export default function AddressScreen() {
               <View style={styles.addressHeader}>
                 <View style={styles.addressLabel}>
                   <Ionicons
-                    name={address.label === 'Home' ? 'home' : 'business'}
+                    name={address.label === 'Home' ? 'home' : address.label === 'Office' ? 'business' : 'location'}
                     size={20}
                     color={APP_COLORS.primary}
                   />
                   <Text style={styles.addressLabelText}>{address.label}</Text>
-                  {address.isDefault && (
+                  {address.is_default && (
                     <View style={styles.defaultBadge}>
                       <Text style={styles.defaultText}>Default</Text>
                     </View>
@@ -165,11 +244,11 @@ export default function AddressScreen() {
                 </View>
               </View>
               <Text style={styles.addressLine1}>{address.line1}</Text>
-              {address.line2.length > 0 && (
+              {address.line2 && address.line2.length > 0 && (
                 <Text style={styles.addressLine2}>{address.line2}</Text>
               )}
               <Text style={styles.addressCity}>{address.city}</Text>
-              {!address.isDefault && (
+              {!address.is_default && (
                 <TouchableOpacity style={styles.setDefaultButton} onPress={() => setDefault(address.id)}>
                   <Ionicons name="checkmark-circle-outline" size={16} color={APP_COLORS.primary} />
                   <Text style={styles.setDefaultText}>Set as default</Text>
@@ -180,7 +259,6 @@ export default function AddressScreen() {
         )}
       </ScrollView>
 
-      {/* Add/Edit Modal */}
       <Modal visible={showForm} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -203,12 +281,7 @@ export default function AddressScreen() {
                       style={[styles.labelChip, label === l && styles.labelChipActive]}
                       onPress={() => setLabel(l)}
                     >
-                      <Text
-                        style={[
-                          styles.labelChipText,
-                          label === l && styles.labelChipTextActive,
-                        ]}
-                      >
+                      <Text style={[styles.labelChipText, label === l && styles.labelChipTextActive]}>
                         {l}
                       </Text>
                     </TouchableOpacity>
@@ -249,10 +322,14 @@ export default function AddressScreen() {
                 />
               </View>
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>
-                  {editingAddress ? 'Update Address' : 'Save Address'}
-                </Text>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
+                {saving ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>
+                    {editingAddress ? 'Update Address' : 'Save Address'}
+                  </Text>
+                )}
               </TouchableOpacity>
             </ScrollView>
           </View>

@@ -1,20 +1,105 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
-import { FOOD_IMAGES } from '../../src/types';
+import { useAuth } from '../../src/context/AuthContext';
+import { supabase } from '../../src/lib/supabaseClient';
 import { FoodImage } from '../../src/components/FoodImage';
 
-const FAVORITES = [
-  { id: '1', name: 'Tower Burger', price: 3100, image: FOOD_IMAGES.burger, category: 'Burgers' },
-  { id: '4', name: 'Devilled Chicken', price: 1100, image: FOOD_IMAGES.devilled_chicken, category: 'Chinese' },
-  { id: '6', name: 'Chicken Biryani', price: 1050, image: FOOD_IMAGES.biryani, category: 'Indian' },
-];
+type FavoriteItem = {
+  id: string;
+  user_id: string;
+  menu_item_id: string;
+  menu_items: {
+    id: string;
+    name: string;
+    price: number;
+    image: string;
+    category_id: string;
+  };
+};
 
 export default function FavoritesScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (FAVORITES.length === 0) {
+  const fetchFavorites = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('id, user_id, menu_item_id, menu_items(*)')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setFavorites(data || []);
+    } catch (error) {
+      console.error('Failed to fetch favorites:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchFavorites();
+  }, [fetchFavorites]);
+
+  const handleRemove = async (id: string) => {
+    try {
+      const { error } = await supabase.from('favorites').delete().eq('id', id);
+      if (error) throw error;
+      setFavorites((prev) => prev.filter((f) => f.id !== id));
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
+  };
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Favorites</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.empty}>
+          <Ionicons name="lock-closed-outline" size={64} color={APP_COLORS.textSecondary} />
+          <Text style={styles.emptyTitle}>Sign in required</Text>
+          <Text style={styles.emptySubtitle}>Please sign in to view your favorites</Text>
+          <TouchableOpacity style={styles.browseButton} onPress={() => router.push('/auth/login')}>
+            <Text style={styles.browseText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Favorites</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={APP_COLORS.primary} />
+        </View>
+      </View>
+    );
+  }
+
+  if (favorites.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -47,7 +132,7 @@ export default function FavoritesScreen() {
       </View>
 
       <FlatList
-        data={FAVORITES}
+        data={favorites}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
@@ -58,23 +143,22 @@ export default function FavoritesScreen() {
               router.push({
                 pathname: '/item/[id]',
                 params: {
-                  id: item.id,
-                  name: item.name,
-                  price: item.price.toString(),
-                  image: item.image,
-                  category_id: item.category.toLowerCase(),
+                  id: item.menu_items?.id,
+                  name: item.menu_items?.name,
+                  price: item.menu_items?.price.toString(),
+                  image: item.menu_items?.image,
+                  category_id: item.menu_items?.category_id,
                   is_trending: 'true',
                 },
               })
             }
           >
-            <FoodImage uri={item.image} size={70} borderRadius={12} />
+            <FoodImage uri={item.menu_items?.image} size={70} borderRadius={12} />
             <View style={styles.favInfo}>
-              <Text style={styles.favName}>{item.name}</Text>
-              <Text style={styles.favCategory}>{item.category}</Text>
-              <Text style={styles.favPrice}>Rs. {item.price.toLocaleString()}</Text>
+              <Text style={styles.favName}>{item.menu_items?.name}</Text>
+              <Text style={styles.favPrice}>Rs. {item.menu_items?.price.toLocaleString()}</Text>
             </View>
-            <TouchableOpacity style={styles.removeButton}>
+            <TouchableOpacity style={styles.removeButton} onPress={() => handleRemove(item.id)}>
               <Ionicons name="heart-dislike" size={22} color="#EF4444" />
             </TouchableOpacity>
           </TouchableOpacity>
@@ -108,10 +192,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: APP_COLORS.border,
   },
-  favImage: { width: 70, height: 70, borderRadius: 12 },
   favInfo: { flex: 1, marginLeft: 12 },
   favName: { fontSize: 16, fontWeight: '600', color: APP_COLORS.text },
-  favCategory: { fontSize: 13, color: APP_COLORS.textSecondary, marginTop: 2 },
   favPrice: { fontSize: 16, fontWeight: '700', color: APP_COLORS.primary, marginTop: 4 },
   removeButton: { padding: 8 },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
