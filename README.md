@@ -131,6 +131,11 @@ To enable push notifications, you need to deploy the Supabase Edge Function.
 4. **Run the Database Trigger SQL**
    (See the "Step 6" section in the project documentation).
 
+## 📥 Download APK
+
+You can download the latest Android APK from Google Drive:
+👉 **[Download Big Plate APK](https://drive.google.com/drive/u/1/folders/1XyHUHkMqjCCqdfJl_We92a98vozXFuSF)**
+
 ## 🤝 Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
