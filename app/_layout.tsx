@@ -9,13 +9,13 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <ThemedAlertProvider>
-        <NotificationProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <NotificationProvider>
             <CartProvider>
               <Stack screenOptions={{ headerShown: false }} />
             </CartProvider>
-          </AuthProvider>
-        </NotificationProvider>
+          </NotificationProvider>
+        </AuthProvider>
       </ThemedAlertProvider>
     </ThemeProvider>
   );
