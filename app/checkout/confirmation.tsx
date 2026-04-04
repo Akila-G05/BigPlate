@@ -44,7 +44,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  stepDotActive: { backgroundColor: APP_COLORS.success },
+  stepDotActive: { backgroundColor: APP_COLORS.primary },
   stepDotPending: { backgroundColor: '#E5E7EB' },
   stepText: { fontSize: 11, color: c.text, marginTop: 6, fontWeight: '600' },
   stepTextPending: { color: c.textSecondary },
@@ -80,22 +80,15 @@ export default function OrderConfirmationScreen() {
         </View>
         <Text style={styles.title}>Order Placed!</Text>
         <Text style={styles.subtitle}>
-          Your order has been received and is being prepared.
+          Your order has been received. We'll notify you once it's confirmed.
         </Text>
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Ionicons name="receipt" size={20} color={colors.textSecondary} />
+            <Ionicons name="time" size={20} color={APP_COLORS.primary} />
             <View style={styles.infoText}>
-              <Text style={styles.infoLabel}>Order ID</Text>
-              <Text style={styles.infoValue}>#ORD-{Math.floor(Math.random() * 9000 + 1000)}</Text>
-            </View>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="time" size={20} color={colors.textSecondary} />
-            <View style={styles.infoText}>
-              <Text style={styles.infoLabel}>Estimated Delivery</Text>
-              <Text style={styles.infoValue}>25-35 minutes</Text>
+              <Text style={styles.infoLabel}>Status</Text>
+              <Text style={styles.infoValue}>Pending</Text>
             </View>
           </View>
           <View style={styles.infoRow}>
@@ -110,9 +103,9 @@ export default function OrderConfirmationScreen() {
         <View style={styles.statusSteps}>
           <View style={styles.step}>
             <View style={[styles.stepDot, styles.stepDotActive]}>
-              <Ionicons name="checkmark" size={16} color="#FFF" />
+              <Ionicons name="time" size={16} color="#FFF" />
             </View>
-            <Text style={styles.stepText}>Confirmed</Text>
+            <Text style={styles.stepText}>Pending</Text>
           </View>
           <View style={styles.stepLine} />
           <View style={styles.step}>
@@ -124,9 +117,9 @@ export default function OrderConfirmationScreen() {
           <View style={styles.stepLine} />
           <View style={styles.step}>
             <View style={[styles.stepDot, styles.stepDotPending]}>
-              <Ionicons name="bicycle" size={14} color={colors.textSecondary} />
+              <Ionicons name="home" size={14} color={colors.textSecondary} />
             </View>
-            <Text style={[styles.stepText, styles.stepTextPending]}>Delivery</Text>
+            <Text style={[styles.stepText, styles.stepTextPending]}>Delivered</Text>
           </View>
         </View>
 
