@@ -7,6 +7,12 @@ import { useNotifications } from '../../src/context/NotificationContext';
 import { useAuth } from '../../src/context/AuthContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 
+const NOTIF_COLORS: Record<string, { icon: string; bg: string }> = {
+  order: { icon: '#3B82F6', bg: '#DBEAFE' },
+  promo: { icon: '#F59E0B', bg: '#FEF3C7' },
+  system: { icon: '#6B7280', bg: '#F3F4F6' },
+};
+
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 50, paddingBottom: 16, backgroundColor: c.card },
@@ -44,13 +50,7 @@ export default function NotificationsScreen() {
     }
   };
 
-  const getIconColor = (type: string) => {
-    switch (type) {
-      case 'order': return APP_COLORS.primary;
-      case 'promo': return APP_COLORS.warning;
-      default: return colors.textSecondary;
-    }
-  };
+  const getNotifColors = (type: string) => NOTIF_COLORS[type] || NOTIF_COLORS.system;
 
   const formatTime = (dateStr: string) => {
     const now = new Date();
@@ -131,28 +131,31 @@ export default function NotificationsScreen() {
             <Text style={styles.emptySubtitle}>You're all caught up!</Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.notifCard, !item.is_read && styles.notifCardUnread]}
-            onPress={() => markAsRead(item.id)}
-          >
-            <View style={[styles.iconContainer, { backgroundColor: getIconColor(item.type) + '15' }]}>
-              <Ionicons name={getIcon(item.type) as any} size={22} color={getIconColor(item.type)} />
-            </View>
-            <View style={styles.notifContent}>
-              <View style={styles.notifHeader}>
-                <Text style={[styles.notifTitle, !item.is_read && styles.notifTitleUnread]}>
-                  {item.title}
-                </Text>
-                {!item.is_read && <View style={styles.unreadDot} />}
+        renderItem={({ item }) => {
+          const notifColors = getNotifColors(item.type);
+          return (
+            <TouchableOpacity
+              style={[styles.notifCard, !item.is_read && styles.notifCardUnread]}
+              onPress={() => markAsRead(item.id)}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: notifColors.bg }]}>
+                <Ionicons name={getIcon(item.type) as any} size={22} color={notifColors.icon} />
               </View>
-              <Text style={styles.notifMessage} numberOfLines={2}>
-                {item.message}
-              </Text>
-              <Text style={styles.notifTime}>{formatTime(item.created_at)}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
+              <View style={styles.notifContent}>
+                <View style={styles.notifHeader}>
+                  <Text style={[styles.notifTitle, !item.is_read && styles.notifTitleUnread]}>
+                    {item.title}
+                  </Text>
+                  {!item.is_read && <View style={styles.unreadDot} />}
+                </View>
+                <Text style={styles.notifMessage} numberOfLines={2}>
+                  {item.message}
+                </Text>
+                <Text style={styles.notifTime}>{formatTime(item.created_at)}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
       />
     </View>
   );
