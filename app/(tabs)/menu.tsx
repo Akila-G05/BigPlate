@@ -207,9 +207,13 @@ export default function MenuScreen() {
               styles.categoryChip,
               selectedCategory === item.id && styles.categoryChipActive,
             ]}
-            onPress={() =>
-              setSelectedCategory(selectedCategory === item.id ? null : item.id)
-            }
+            onPress={() => {
+              if (selectedCategory === item.id) {
+                router.setParams({ category: undefined });
+              } else {
+                router.setParams({ category: item.id });
+              }
+            }}
           >
             <FoodImage
               uri={item.image}
