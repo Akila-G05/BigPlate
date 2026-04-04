@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
+import { useTheme } from '../../src/context/ThemeContext';
+import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
 const ORDER_STATUSES = [
@@ -16,14 +18,129 @@ const ORDER_STATUSES = [
 type OrderItem = { id: string; order_id: string; menu_item_id: string; name: string; quantity: number; price: number };
 type Order = { id: string; user_id: string; branch: string; city: string; status: string; total: number; delivery_fee: number; payment_method: string; delivery_name: string; delivery_phone: string; delivery_address: string; delivery_instructions: string; created_at: string; order_items: OrderItem[] };
 
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background, paddingTop: 50 },
+  header: { paddingHorizontal: 20, paddingBottom: 16 },
+  headerTitle: { fontSize: 24, fontWeight: '700', color: c.text },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 100 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 12 },
+  activeOrderCard: {
+    backgroundColor: c.card,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: APP_COLORS.primary,
+  },
+  activeOrderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  activeOrderId: { fontSize: 18, fontWeight: '700', color: c.text },
+  activeOrderBranch: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: APP_COLORS.primary },
+  liveText: { fontSize: 11, fontWeight: '700', color: APP_COLORS.primary },
+  progressSteps: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  stepItem: { alignItems: 'center', flex: 1 },
+  stepDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E5E7EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  stepDotActive: { backgroundColor: APP_COLORS.success },
+  stepDotCurrent: { backgroundColor: APP_COLORS.primary },
+  stepLabel: { fontSize: 10, color: c.textSecondary, textAlign: 'center' },
+  stepLabelActive: { color: APP_COLORS.success, fontWeight: '600' },
+  stepLine: {
+    position: 'absolute',
+    top: 18,
+    left: '50%',
+    width: '100%',
+    height: 2,
+    backgroundColor: '#E5E7EB',
+    zIndex: -1,
+  },
+  stepLineActive: { backgroundColor: APP_COLORS.success },
+  activeOrderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  etaLabel: { fontSize: 12, color: c.textSecondary },
+  etaValue: { fontSize: 18, fontWeight: '700', color: c.text },
+  orderDetails: {
+    backgroundColor: c.card,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: c.border,
+  },
+  detailItemName: { fontSize: 14, color: c.text },
+  detailItemPrice: { fontSize: 14, fontWeight: '600', color: c.text },
+  detailTotal: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
+  detailTotalLabel: { fontSize: 16, fontWeight: '600', color: c.text },
+  detailTotalValue: { fontSize: 18, fontWeight: '800', color: APP_COLORS.primary },
+  callButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: APP_COLORS.success,
+    borderRadius: 12,
+    paddingVertical: 12,
+    gap: 8,
+    marginTop: 8,
+  },
+  callButtonText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
+  orderCard: {
+    backgroundColor: c.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  orderId: { fontSize: 16, fontWeight: '700', color: c.text },
+  orderDate: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  status_delivered: { backgroundColor: '#D1FAE5' },
+  statusText: { fontSize: 12, fontWeight: '600', textTransform: 'capitalize', color: c.text },
+  orderItems: { fontSize: 13, color: c.textSecondary, marginBottom: 10 },
+  orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  orderTotal: { fontSize: 16, fontWeight: '700', color: APP_COLORS.primary },
+  reorderButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  reorderText: { fontSize: 13, fontWeight: '600', color: APP_COLORS.primary },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: c.text, marginTop: 16 },
+  emptySubtitle: { fontSize: 14, color: c.textSecondary, marginTop: 8, textAlign: 'center', marginBottom: 24 },
+  browseButton: { backgroundColor: APP_COLORS.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25 },
+  browseText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
+});
+
 export default function OrdersScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [deliveryTimes, setDeliveryTimes] = useState<Record<string, number>>({});
+  const styles = createStyles(colors);
 
   const fetchOrders = async () => {
     if (!user) {
@@ -85,7 +202,7 @@ export default function OrdersScreen() {
           <Text style={styles.headerTitle}>My Orders</Text>
         </View>
         <View style={styles.empty}>
-          <Ionicons name="receipt-outline" size={64} color={APP_COLORS.textSecondary} />
+          <Ionicons name="receipt-outline" size={64} color={colors.textSecondary} />
           <Text style={styles.emptyTitle}>Sign in to view orders</Text>
           <TouchableOpacity style={styles.browseButton} onPress={() => router.push('/auth/login')}>
             <Text style={styles.browseText}>Sign In</Text>
@@ -115,7 +232,7 @@ export default function OrdersScreen() {
           <Text style={styles.headerTitle}>My Orders</Text>
         </View>
         <View style={styles.empty}>
-          <Ionicons name="receipt-outline" size={64} color={APP_COLORS.textSecondary} />
+          <Ionicons name="receipt-outline" size={64} color={colors.textSecondary} />
           <Text style={styles.emptyTitle}>No orders yet</Text>
           <Text style={styles.emptySubtitle}>Your order history will appear here</Text>
           <TouchableOpacity style={styles.browseButton} onPress={() => router.push('/(tabs)/menu')}>
@@ -164,7 +281,7 @@ export default function OrdersScreen() {
                         return (
                           <View key={step.key} style={styles.stepItem}>
                             <View style={[styles.stepDot, isActive && styles.stepDotActive, isCurrent && styles.stepDotCurrent]}>
-                              <Ionicons name={step.icon as any} size={16} color={isActive ? '#FFF' : APP_COLORS.textSecondary} />
+                              <Ionicons name={step.icon as any} size={16} color={isActive ? '#FFF' : colors.textSecondary} />
                             </View>
                             <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>{step.label}</Text>
                             {index < ORDER_STATUSES.length - 1 && (
@@ -180,7 +297,7 @@ export default function OrdersScreen() {
                         <Text style={styles.etaLabel}>Estimated Delivery</Text>
                         <Text style={styles.etaValue}>{deliveryTimes[order.city] || 30}-{(deliveryTimes[order.city] || 30) + 10} min</Text>
                       </View>
-                      <Ionicons name={selectedOrder === order.id ? 'chevron-up' : 'chevron-down'} size={24} color={APP_COLORS.textSecondary} />
+                      <Ionicons name={selectedOrder === order.id ? 'chevron-up' : 'chevron-down'} size={24} color={colors.textSecondary} />
                     </View>
                   </TouchableOpacity>
 
@@ -240,116 +357,3 @@ export default function OrdersScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: APP_COLORS.background, paddingTop: 50 },
-  header: { paddingHorizontal: 20, paddingBottom: 16 },
-  headerTitle: { fontSize: 24, fontWeight: '700', color: APP_COLORS.text },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 100 },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text, marginBottom: 12 },
-  activeOrderCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: APP_COLORS.primary,
-  },
-  activeOrderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
-  activeOrderId: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
-  activeOrderBranch: { fontSize: 13, color: APP_COLORS.textSecondary, marginTop: 2 },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: APP_COLORS.primary },
-  liveText: { fontSize: 11, fontWeight: '700', color: APP_COLORS.primary },
-  progressSteps: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  stepItem: { alignItems: 'center', flex: 1 },
-  stepDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  stepDotActive: { backgroundColor: APP_COLORS.success },
-  stepDotCurrent: { backgroundColor: APP_COLORS.primary },
-  stepLabel: { fontSize: 10, color: APP_COLORS.textSecondary, textAlign: 'center' },
-  stepLabelActive: { color: APP_COLORS.success, fontWeight: '600' },
-  stepLine: {
-    position: 'absolute',
-    top: 18,
-    left: '50%',
-    width: '100%',
-    height: 2,
-    backgroundColor: '#E5E7EB',
-    zIndex: -1,
-  },
-  stepLineActive: { backgroundColor: APP_COLORS.success },
-  activeOrderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  etaLabel: { fontSize: 12, color: APP_COLORS.textSecondary },
-  etaValue: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
-  orderDetails: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: APP_COLORS.border,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: APP_COLORS.border,
-  },
-  detailItemName: { fontSize: 14, color: APP_COLORS.text },
-  detailItemPrice: { fontSize: 14, fontWeight: '600', color: APP_COLORS.text },
-  detailTotal: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
-  detailTotalLabel: { fontSize: 16, fontWeight: '600', color: APP_COLORS.text },
-  detailTotalValue: { fontSize: 18, fontWeight: '800', color: APP_COLORS.primary },
-  callButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: APP_COLORS.success,
-    borderRadius: 12,
-    paddingVertical: 12,
-    gap: 8,
-    marginTop: 8,
-  },
-  callButtonText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
-  orderCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: APP_COLORS.border,
-  },
-  orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  orderId: { fontSize: 16, fontWeight: '700', color: APP_COLORS.text },
-  orderDate: { fontSize: 12, color: APP_COLORS.textSecondary, marginTop: 2 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  status_delivered: { backgroundColor: '#D1FAE5' },
-  statusText: { fontSize: 12, fontWeight: '600', textTransform: 'capitalize', color: APP_COLORS.text },
-  orderItems: { fontSize: 13, color: APP_COLORS.textSecondary, marginBottom: 10 },
-  orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  orderTotal: { fontSize: 16, fontWeight: '700', color: APP_COLORS.primary },
-  reorderButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  reorderText: { fontSize: 13, fontWeight: '600', color: APP_COLORS.primary },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: APP_COLORS.text, marginTop: 16 },
-  emptySubtitle: { fontSize: 14, color: APP_COLORS.textSecondary, marginTop: 8, textAlign: 'center', marginBottom: 24 },
-  browseButton: { backgroundColor: APP_COLORS.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25 },
-  browseText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
-});

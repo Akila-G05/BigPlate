@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
 import { APP_COLORS } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
+import { useTheme } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
 const SETTINGS_KEY = 'bigplate_settings';
@@ -29,6 +30,7 @@ const DEFAULT_SETTINGS: Settings = {
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(false);
 
@@ -174,7 +176,7 @@ export default function SettingsScreen() {
                 <Text style={styles.settingDesc}>Switch to dark theme</Text>
               </View>
             </View>
-            <Switch value={settings.darkMode} onValueChange={(v) => saveSetting('darkMode', v)} trackColor={{ true: APP_COLORS.primary }} />
+            <Switch value={isDark} onValueChange={toggleTheme} trackColor={{ true: APP_COLORS.primary }} />
           </View>
         </View>
 

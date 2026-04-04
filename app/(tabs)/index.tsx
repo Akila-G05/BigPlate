@@ -13,6 +13,8 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { APP_COLORS } from "../../src/constants";
 import { useCart } from "../../src/context/CartContext";
+import { useTheme } from "../../src/context/ThemeContext";
+import type { ThemeColors } from "../../src/context/ThemeContext";
 import { supabase } from "../../src/lib/supabaseClient";
 import { FoodImage } from "../../src/components/FoodImage";
 
@@ -29,9 +31,58 @@ type MenuItem = {
   discount: number;
 };
 
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: c.background },
+  loadingText: { marginTop: 12, fontSize: 16, color: c.textSecondary },
+  scrollContent: { paddingBottom: 100 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16, backgroundColor: c.card },
+  greeting: { fontSize: 14, color: c.textSecondary },
+  branchSelector: { flexDirection: "row", alignItems: "center", gap: 4 },
+  branchName: { fontSize: 18, fontWeight: "700", color: c.text },
+  cartButton: { position: "relative", padding: 8 },
+  badge: { position: "absolute", top: 0, right: 0, backgroundColor: APP_COLORS.primary, borderRadius: 10, width: 20, height: 20, justifyContent: "center", alignItems: "center" },
+  badgeText: { color: "#FFF", fontSize: 11, fontWeight: "700" },
+  heroBanner: { margin: 20, backgroundColor: APP_COLORS.primary, borderRadius: 20, padding: 24, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  heroContent: { flex: 1 },
+  heroTitle: { fontSize: 24, fontWeight: "800", color: "#FFF", marginBottom: 8 },
+  heroSubtitle: { fontSize: 14, color: "rgba(255,255,255,0.8)", marginBottom: 16 },
+  heroButton: { backgroundColor: "#FFF", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 25, alignSelf: "flex-start" },
+  heroButtonText: { color: APP_COLORS.primary, fontWeight: "700", fontSize: 14 },
+  section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionTitle: { fontSize: 20, fontWeight: "700", color: c.text, marginBottom: 12 },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  seeAll: { color: APP_COLORS.primary, fontSize: 14, fontWeight: "600" },
+  categoriesScroll: { flexDirection: "row" },
+  categoryItem: { alignItems: "center", marginRight: 16 },
+  categoryName: { marginTop: 6, fontSize: 12, color: c.textSecondary },
+  trendingCard: { width: 180, backgroundColor: c.card, borderRadius: 16, padding: 12, marginRight: 12, borderWidth: 1, borderColor: c.border, position: "relative" },
+  trendingImage: { width: "100%", height: 100, borderRadius: 12, marginBottom: 8 },
+  trendingName: { fontSize: 14, fontWeight: "600", color: c.text },
+  trendingInfo: { marginTop: 4 },
+  trendingPrice: { fontSize: 16, fontWeight: "700", color: APP_COLORS.primary, marginTop: 4 },
+  addButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: APP_COLORS.primary, borderRadius: 8, paddingVertical: 6, marginTop: 8, gap: 2 },
+  addButtonText: { color: "#FFF", fontSize: 12, fontWeight: "600" },
+  discountBadge: { position: "absolute", top: 8, right: 8, backgroundColor: APP_COLORS.warning, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  discountText: { color: "#FFF", fontSize: 10, fontWeight: "700" },
+  newBadge: { position: "absolute", top: 8, right: 8, backgroundColor: APP_COLORS.success, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  newText: { color: "#FFF", fontSize: 10, fontWeight: "700" },
+  infoSection: { flexDirection: "row", paddingHorizontal: 20, marginBottom: 24, gap: 12 },
+  infoCard: { flex: 1, backgroundColor: c.card, borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: c.border },
+  infoValue: { fontSize: 20, fontWeight: "800", color: c.text, marginTop: 8 },
+  infoLabel: { fontSize: 11, color: c.textSecondary, textAlign: "center" },
+  promoBanner: { flexDirection: "row", alignItems: "center", backgroundColor: APP_COLORS.primaryDark, marginHorizontal: 20, marginBottom: 24, borderRadius: 16, padding: 16, gap: 12 },
+  promoIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", justifyContent: "center", alignItems: "center" },
+  promoInfo: { flex: 1 },
+  promoTitle: { fontSize: 16, fontWeight: "700", color: "#FFF" },
+  promoSubtitle: { fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 },
+});
+
 export default function HomeScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { addToCart, itemCount } = useCart();
+  const styles = createStyles(colors);
   const [categories, setCategories] = useState<Category[]>([]);
   const [trendingItems, setTrendingItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -266,192 +317,3 @@ export default function HomeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: APP_COLORS.background },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: APP_COLORS.background,
-  },
-  loadingText: { marginTop: 12, fontSize: 16, color: APP_COLORS.textSecondary },
-  scrollContent: { paddingBottom: 100 },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: APP_COLORS.card,
-  },
-  greeting: { fontSize: 14, color: APP_COLORS.textSecondary },
-  branchSelector: { flexDirection: "row", alignItems: "center", gap: 4 },
-  branchName: { fontSize: 18, fontWeight: "700", color: APP_COLORS.text },
-  cartButton: { position: "relative", padding: 8 },
-  badge: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: APP_COLORS.primary,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  badgeText: { color: "#FFF", fontSize: 11, fontWeight: "700" },
-  heroBanner: {
-    margin: 20,
-    backgroundColor: APP_COLORS.primary,
-    borderRadius: 20,
-    padding: 24,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  heroContent: { flex: 1 },
-  heroTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#FFF",
-    marginBottom: 8,
-  },
-  heroSubtitle: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
-    marginBottom: 16,
-  },
-  heroButton: {
-    backgroundColor: "#FFF",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
-    alignSelf: "flex-start",
-  },
-  heroButtonText: {
-    color: APP_COLORS.primary,
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  section: { paddingHorizontal: 20, marginBottom: 24 },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: APP_COLORS.text,
-    marginBottom: 12,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  seeAll: { color: APP_COLORS.primary, fontSize: 14, fontWeight: "600" },
-  categoriesScroll: { flexDirection: "row" },
-  categoryItem: { alignItems: "center", marginRight: 16 },
-  categoryName: { marginTop: 6, fontSize: 12, color: APP_COLORS.textSecondary },
-  trendingCard: {
-    width: 180,
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    padding: 12,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: APP_COLORS.border,
-    position: "relative",
-  },
-  trendingImage: {
-    width: "100%",
-    height: 100,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  trendingName: { fontSize: 14, fontWeight: "600", color: APP_COLORS.text },
-  trendingInfo: { marginTop: 4 },
-  trendingPrice: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: APP_COLORS.primary,
-    marginTop: 4,
-  },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: APP_COLORS.primary,
-    borderRadius: 8,
-    paddingVertical: 6,
-    marginTop: 8,
-    gap: 2,
-  },
-  addButtonText: { color: "#FFF", fontSize: 12, fontWeight: "600" },
-  discountBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: APP_COLORS.warning,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  discountText: { color: "#FFF", fontSize: 10, fontWeight: "700" },
-  newBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: APP_COLORS.success,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  newText: { color: "#FFF", fontSize: 10, fontWeight: "700" },
-  infoSection: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    marginBottom: 24,
-    gap: 12,
-  },
-  infoCard: {
-    flex: 1,
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: APP_COLORS.border,
-  },
-  infoValue: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: APP_COLORS.text,
-    marginTop: 8,
-  },
-  infoLabel: {
-    fontSize: 11,
-    color: APP_COLORS.textSecondary,
-    textAlign: "center",
-  },
-  promoBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: APP_COLORS.primaryDark,
-    marginHorizontal: 20,
-    marginBottom: 24,
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-  },
-  promoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  promoInfo: { flex: 1 },
-  promoTitle: { fontSize: 16, fontWeight: "700", color: "#FFF" },
-  promoSubtitle: { fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 },
-});

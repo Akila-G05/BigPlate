@@ -14,14 +14,63 @@ import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
 import { useAuth } from '../../src/context/AuthContext';
+import { useTheme } from '../../src/context/ThemeContext';
+import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
 type Branch = { id: string; name: string; address: string; phone: string; delivers_to_city: boolean };
+
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 50, paddingBottom: 16, backgroundColor: c.card },
+  backButton: { padding: 4 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+  scrollContent: { padding: 20, paddingBottom: 100 },
+  cityInfo: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: c.border, gap: 10 },
+  cityInfoText: { flex: 1, fontSize: 14, color: c.textSecondary },
+  cityInfoName: { fontWeight: '700', color: c.text },
+  deliveryInfoText: { fontSize: 13, color: c.textSecondary },
+  section: { marginBottom: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 12 },
+  branchCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: c.border, gap: 12 },
+  branchCardActive: { borderColor: APP_COLORS.primary, backgroundColor: '#FFF5F5' },
+  branchCardDisabled: { opacity: 0.5, backgroundColor: c.input },
+  branchInfo: { flex: 1 },
+  branchName: { fontSize: 15, fontWeight: '600', color: c.text },
+  branchNameDisabled: { color: c.textSecondary },
+  branchAddress: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
+  noDeliveryText: { fontSize: 12, color: '#EF4444', marginTop: 4, fontWeight: '500' },
+  inputGroup: { marginBottom: 12 },
+  label: { fontSize: 14, fontWeight: '600', color: c.text, marginBottom: 6 },
+  input: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: c.text },
+  disabledInput: { backgroundColor: c.input, color: c.textSecondary },
+  textArea: { textAlignVertical: 'top', minHeight: 80 },
+  paymentOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: c.border, gap: 12 },
+  paymentOptionActive: { borderColor: APP_COLORS.primary, backgroundColor: '#FFF5F5' },
+  paymentInfo: { flex: 1 },
+  paymentName: { fontSize: 15, fontWeight: '600', color: c.text },
+  paymentDesc: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
+  summaryItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.border },
+  summaryItemName: { fontSize: 14, color: c.text },
+  summaryItemPrice: { fontSize: 14, fontWeight: '600', color: c.text },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  summaryLabel: { fontSize: 14, color: c.textSecondary },
+  summaryValue: { fontSize: 14, color: c.text },
+  grandTotalRow: { borderTopWidth: 1, borderTopColor: c.border, paddingTop: 12, marginTop: 4 },
+  grandTotalLabel: { fontSize: 18, fontWeight: '700', color: c.text },
+  grandTotalValue: { fontSize: 18, fontWeight: '800', color: APP_COLORS.primary },
+  bottomBar: { padding: 20, paddingBottom: 32, backgroundColor: c.card, borderTopWidth: 1, borderTopColor: c.border },
+  placeOrderButton: { backgroundColor: APP_COLORS.primary, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
+  placeOrderText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: c.text, marginTop: 16 },
+});
 
 export default function CheckoutScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { items, total, clearCart } = useCart();
+  const { colors } = useTheme();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [userCity, setUserCity] = useState<string | null>(null);
@@ -33,6 +82,7 @@ export default function CheckoutScreen() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const styles = createStyles(colors);
 
   useEffect(() => {
     if (!user) {
@@ -118,13 +168,13 @@ export default function CheckoutScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Checkout</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.empty}>
-          <Ionicons name="cart-outline" size={64} color={APP_COLORS.textSecondary} />
+          <Ionicons name="cart-outline" size={64} color={colors.textSecondary} />
           <Text style={styles.emptyTitle}>Your cart is empty</Text>
         </View>
       </View>
@@ -217,7 +267,7 @@ export default function CheckoutScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Checkout</Text>
           <View style={{ width: 40 }} />
@@ -233,7 +283,7 @@ export default function CheckoutScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Checkout</Text>
         <View style={{ width: 40 }} />
@@ -267,7 +317,7 @@ export default function CheckoutScreen() {
                 <Ionicons
                   name={isDisabled ? 'ban' : isSelected ? 'radio-button-on' : 'radio-button-off'}
                   size={22}
-                  color={isDisabled ? APP_COLORS.textSecondary : APP_COLORS.primary}
+                  color={isDisabled ? colors.textSecondary : APP_COLORS.primary}
                 />
                 <View style={styles.branchInfo}>
                   <Text style={[styles.branchName, isDisabled && styles.branchNameDisabled]}>{b.name}</Text>
@@ -301,7 +351,7 @@ export default function CheckoutScreen() {
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
-              placeholderTextColor={APP_COLORS.textSecondary}
+              placeholderTextColor={colors.textSecondary}
             />
           </View>
           <View style={styles.inputGroup}>
@@ -313,7 +363,7 @@ export default function CheckoutScreen() {
               onChangeText={setInstructions}
               multiline
               numberOfLines={2}
-              placeholderTextColor={APP_COLORS.textSecondary}
+              placeholderTextColor={colors.textSecondary}
             />
           </View>
         </View>
@@ -391,49 +441,3 @@ export default function CheckoutScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: APP_COLORS.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 50, paddingBottom: 16, backgroundColor: APP_COLORS.card },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
-  scrollContent: { padding: 20, paddingBottom: 100 },
-  cityInfo: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: APP_COLORS.border, gap: 10 },
-  cityInfoText: { flex: 1, fontSize: 14, color: APP_COLORS.textSecondary },
-  cityInfoName: { fontWeight: '700', color: APP_COLORS.text },
-  deliveryInfoText: { fontSize: 13, color: APP_COLORS.textSecondary },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text, marginBottom: 12 },
-  branchCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: APP_COLORS.border, gap: 12 },
-  branchCardActive: { borderColor: APP_COLORS.primary, backgroundColor: '#FFF5F5' },
-  branchCardDisabled: { opacity: 0.5, backgroundColor: '#F9FAFB' },
-  branchInfo: { flex: 1 },
-  branchName: { fontSize: 15, fontWeight: '600', color: APP_COLORS.text },
-  branchNameDisabled: { color: APP_COLORS.textSecondary },
-  branchAddress: { fontSize: 13, color: APP_COLORS.textSecondary, marginTop: 2 },
-  noDeliveryText: { fontSize: 12, color: '#EF4444', marginTop: 4, fontWeight: '500' },
-  inputGroup: { marginBottom: 12 },
-  label: { fontSize: 14, fontWeight: '600', color: APP_COLORS.text, marginBottom: 6 },
-  input: { backgroundColor: '#FFF', borderWidth: 1, borderColor: APP_COLORS.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: APP_COLORS.text },
-  disabledInput: { backgroundColor: '#F3F4F6', color: APP_COLORS.textSecondary },
-  textArea: { textAlignVertical: 'top', minHeight: 80 },
-  paymentOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: APP_COLORS.border, gap: 12 },
-  paymentOptionActive: { borderColor: APP_COLORS.primary, backgroundColor: '#FFF5F5' },
-  paymentInfo: { flex: 1 },
-  paymentName: { fontSize: 15, fontWeight: '600', color: APP_COLORS.text },
-  paymentDesc: { fontSize: 13, color: APP_COLORS.textSecondary, marginTop: 2 },
-  summaryItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: APP_COLORS.border },
-  summaryItemName: { fontSize: 14, color: APP_COLORS.text },
-  summaryItemPrice: { fontSize: 14, fontWeight: '600', color: APP_COLORS.text },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
-  summaryLabel: { fontSize: 14, color: APP_COLORS.textSecondary },
-  summaryValue: { fontSize: 14, color: APP_COLORS.text },
-  grandTotalRow: { borderTopWidth: 1, borderTopColor: APP_COLORS.border, paddingTop: 12, marginTop: 4 },
-  grandTotalLabel: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
-  grandTotalValue: { fontSize: 18, fontWeight: '800', color: APP_COLORS.primary },
-  bottomBar: { padding: 20, paddingBottom: 32, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: APP_COLORS.border },
-  placeOrderButton: { backgroundColor: APP_COLORS.primary, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
-  placeOrderText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: APP_COLORS.text, marginTop: 16 },
-});

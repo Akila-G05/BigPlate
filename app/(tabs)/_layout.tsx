@@ -1,20 +1,23 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../../src/context/CartContext';
+import { useTheme } from '../../src/context/ThemeContext';
 import { APP_COLORS } from '../../src/constants';
 
 export default function TabLayout() {
   const { itemCount } = useCart();
+  const { colors } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: APP_COLORS.primary,
-        tabBarInactiveTintColor: APP_COLORS.textSecondary,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
           borderTopWidth: 1,
-          borderTopColor: APP_COLORS.border,
+          borderTopColor: colors.border,
+          backgroundColor: colors.card,
         },
       }}
     >

@@ -3,23 +3,70 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
+import { useTheme } from '../../src/context/ThemeContext';
+import type { ThemeColors } from '../../src/context/ThemeContext';
 import { FoodImage } from '../../src/components/FoodImage';
+
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background, paddingTop: 50 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16 },
+  headerTitle: { fontSize: 24, fontWeight: '700', color: c.text },
+  clearText: { color: APP_COLORS.primary, fontSize: 14, fontWeight: '600' },
+  list: { paddingHorizontal: 20, paddingBottom: 200 },
+  cartItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: c.card,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  itemImage: { width: 56, height: 56, borderRadius: 12 },
+  itemInfo: { flex: 1, marginLeft: 12 },
+  itemName: { fontSize: 15, fontWeight: '600', color: c.text },
+  itemPrice: { fontSize: 14, fontWeight: '700', color: APP_COLORS.primary, marginTop: 4 },
+  quantityControl: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  qtyButton: { width: 32, height: 32, borderRadius: 8, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' },
+  qtyText: { fontSize: 16, fontWeight: '600', color: c.text, minWidth: 20, textAlign: 'center' },
+  checkout: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: c.card,
+    borderTopWidth: 1,
+    borderTopColor: c.border,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  totalLabel: { fontSize: 16, color: c.textSecondary },
+  totalValue: { fontSize: 22, fontWeight: '800', color: c.text },
+  checkoutButton: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: APP_COLORS.primary, borderRadius: 16, paddingVertical: 16, gap: 8 },
+  checkoutText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: c.text, marginTop: 16 },
+  emptySubtitle: { fontSize: 14, color: c.textSecondary, marginTop: 8, textAlign: 'center' },
+  browseButton: { backgroundColor: APP_COLORS.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25, marginTop: 24 },
+  browseText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+});
 
 export default function CartScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { items, updateQuantity, removeFromCart, total, clearCart } = useCart();
+  const styles = createStyles(colors);
 
   if (items.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.empty}>
-          <Ionicons name="cart-outline" size={64} color={APP_COLORS.textSecondary} />
+          <Ionicons name="cart-outline" size={64} color={colors.textSecondary} />
           <Text style={styles.emptyTitle}>Your cart is empty</Text>
           <Text style={styles.emptySubtitle}>Add items from the menu to get started</Text>
-          <TouchableOpacity
-            style={styles.browseButton}
-            onPress={() => router.push('/(tabs)/menu')}
-          >
+          <TouchableOpacity style={styles.browseButton} onPress={() => router.push('/(tabs)/menu')}>
             <Text style={styles.browseText}>Browse Menu</Text>
           </TouchableOpacity>
         </View>
@@ -66,7 +113,6 @@ export default function CartScreen() {
         )}
       />
 
-      {/* Checkout */}
       <View style={styles.checkout}>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Total</Text>
@@ -80,80 +126,3 @@ export default function CartScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: APP_COLORS.background, paddingTop: 50 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-  },
-  headerTitle: { fontSize: 24, fontWeight: '700', color: APP_COLORS.text },
-  clearText: { color: APP_COLORS.primary, fontSize: 14, fontWeight: '600' },
-  list: { paddingHorizontal: 20, paddingBottom: 200 },
-  cartItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: APP_COLORS.border,
-  },
-  itemImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-  },
-  itemInfo: { flex: 1, marginLeft: 12 },
-  itemName: { fontSize: 15, fontWeight: '600', color: APP_COLORS.text },
-  itemPrice: { fontSize: 14, fontWeight: '700', color: APP_COLORS.primary, marginTop: 4 },
-  quantityControl: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  qtyButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#FFF0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  qtyText: { fontSize: 16, fontWeight: '600', color: APP_COLORS.text, minWidth: 20, textAlign: 'center' },
-  checkout: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFF',
-    borderTopWidth: 1,
-    borderTopColor: APP_COLORS.border,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  totalLabel: { fontSize: 16, color: APP_COLORS.textSecondary },
-  totalValue: { fontSize: 22, fontWeight: '800', color: APP_COLORS.text },
-  checkoutButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: APP_COLORS.primary,
-    borderRadius: 16,
-    paddingVertical: 16,
-    gap: 8,
-  },
-  checkoutText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: APP_COLORS.text, marginTop: 16 },
-  emptySubtitle: { fontSize: 14, color: APP_COLORS.textSecondary, marginTop: 8, textAlign: 'center' },
-  browseButton: {
-    backgroundColor: APP_COLORS.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-    marginTop: 24,
-  },
-  browseText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-});

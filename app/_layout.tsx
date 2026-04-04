@@ -1,13 +1,16 @@
 import { Stack } from "expo-router";
-import { CartProvider } from "../src/context/CartContext";
+import { ThemeProvider } from "../src/context/ThemeContext";
 import { AuthProvider } from "../src/context/AuthContext";
+import { CartProvider } from "../src/context/CartContext";
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-      </CartProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
 
-    if (data.user && !data.session) {
+    if (data.user) {
       const { error: profileError } = await supabase
         .from('users')
         .insert({ id: data.user.id, name, email, phone });

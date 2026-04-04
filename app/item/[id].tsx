@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
 import { useAuth } from '../../src/context/AuthContext';
+import { useTheme } from '../../src/context/ThemeContext';
+import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 import { FoodImage } from '../../src/components/FoodImage';
 
@@ -23,15 +25,82 @@ type MenuItem = {
   tags: string[];
 };
 
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.background },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 16,
+    backgroundColor: c.card,
+  },
+  backButton: { padding: 4 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+  favButton: { padding: 4 },
+  scrollContent: { paddingBottom: 100 },
+  itemDetailImage: {
+    width: '100%',
+    height: 280,
+  },
+  infoSection: { padding: 20 },
+  itemName: { fontSize: 24, fontWeight: '800', color: c.text },
+  tagsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  spiceBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  spiceText: { fontSize: 12, fontWeight: '600' },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  tagText: { fontSize: 12, color: c.textSecondary },
+  itemPrice: { fontSize: 28, fontWeight: '800', color: APP_COLORS.primary, marginTop: 12 },
+  discountRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  discountBadge: { backgroundColor: APP_COLORS.warning, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  discountText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
+  originalPrice: { fontSize: 16, color: c.textSecondary, textDecorationLine: 'line-through' },
+  sectionLabel: { fontSize: 16, fontWeight: '700', color: c.text, marginTop: 20, marginBottom: 8 },
+  description: { fontSize: 15, color: c.textSecondary, lineHeight: 22 },
+  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tagChip: { backgroundColor: c.input, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  tagChipText: { fontSize: 13, color: c.textSecondary, fontWeight: '500' },
+  newBadgeInline: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: APP_COLORS.success, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, alignSelf: 'flex-start', marginTop: 16 },
+  newTextInline: { color: '#FFF', fontSize: 13, fontWeight: '600' },
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: c.card,
+    borderTopWidth: 1,
+    borderTopColor: c.border,
+    padding: 16,
+    paddingBottom: 32,
+    gap: 12,
+  },
+  quantityControl: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: '#FFF0F0', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+  qtyButton: { width: 32, height: 32, justifyContent: 'center', alignItems: 'center' },
+  qtyText: { fontSize: 18, fontWeight: '700', color: c.text, minWidth: 24, textAlign: 'center' },
+  addButton: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: APP_COLORS.primary,
+    borderRadius: 14,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  addButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+});
+
 export default function ItemDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { addToCart } = useCart();
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [quantity, setQuantity] = useState(1);
   const [item, setItem] = useState<MenuItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+  const styles = createStyles(colors);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -105,7 +174,7 @@ export default function ItemDetailScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Item Not Found</Text>
           <View style={{ width: 40 }} />
@@ -120,11 +189,11 @@ export default function ItemDetailScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Item Details</Text>
         <TouchableOpacity style={styles.favButton} onPress={toggleFavorite}>
-          <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={isFavorite ? APP_COLORS.primary : APP_COLORS.text} />
+          <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={isFavorite ? APP_COLORS.primary : colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -139,7 +208,7 @@ export default function ItemDetailScreen() {
               <Text style={[styles.spiceText, { color: spiceColor }]}>{item.spice_level}</Text>
             </View>
             <View style={styles.tag}>
-              <Ionicons name="time" size={14} color={APP_COLORS.textSecondary} />
+              <Ionicons name="time" size={14} color={colors.textSecondary} />
               <Text style={styles.tagText}>{item.prep_time}</Text>
             </View>
           </View>
@@ -212,68 +281,3 @@ export default function ItemDetailScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: APP_COLORS.background },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: APP_COLORS.background },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 16,
-    backgroundColor: APP_COLORS.card,
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
-  favButton: { padding: 4 },
-  scrollContent: { paddingBottom: 100 },
-  itemDetailImage: {
-    width: '100%',
-    height: 280,
-  },
-  infoSection: { padding: 20 },
-  itemName: { fontSize: 24, fontWeight: '800', color: APP_COLORS.text },
-  tagsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  spiceBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  spiceText: { fontSize: 12, fontWeight: '600' },
-  tag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  tagText: { fontSize: 12, color: APP_COLORS.textSecondary },
-  itemPrice: { fontSize: 28, fontWeight: '800', color: APP_COLORS.primary, marginTop: 12 },
-  discountRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  discountBadge: { backgroundColor: APP_COLORS.warning, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  discountText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
-  originalPrice: { fontSize: 16, color: APP_COLORS.textSecondary, textDecorationLine: 'line-through' },
-  sectionLabel: { fontSize: 16, fontWeight: '700', color: APP_COLORS.text, marginTop: 20, marginBottom: 8 },
-  description: { fontSize: 15, color: APP_COLORS.textSecondary, lineHeight: 22 },
-  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tagChip: { backgroundColor: '#F3F4F6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  tagChipText: { fontSize: 13, color: APP_COLORS.textSecondary, fontWeight: '500' },
-  newBadgeInline: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: APP_COLORS.success, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, alignSelf: 'flex-start', marginTop: 16 },
-  newTextInline: { color: '#FFF', fontSize: 13, fontWeight: '600' },
-  bottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    borderTopWidth: 1,
-    borderTopColor: APP_COLORS.border,
-    padding: 16,
-    paddingBottom: 32,
-    gap: 12,
-  },
-  quantityControl: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: '#FFF0F0', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
-  qtyButton: { width: 32, height: 32, justifyContent: 'center', alignItems: 'center' },
-  qtyText: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text, minWidth: 24, textAlign: 'center' },
-  addButton: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: APP_COLORS.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
-    gap: 8,
-  },
-  addButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-});
