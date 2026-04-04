@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,18 +9,40 @@ import {
   RefreshControl,
   Animated,
   ActivityIndicator,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { APP_COLORS } from '../../src/constants';
-import { useCart } from '../../src/context/CartContext';
-import { supabase } from '../../src/lib/supabaseClient';
-import { FoodImage } from '../../src/components/FoodImage';
+} from "react-native";
+import { useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { APP_COLORS } from "../../src/constants";
+import { useCart } from "../../src/context/CartContext";
+import { supabase } from "../../src/lib/supabaseClient";
+import { FoodImage } from "../../src/components/FoodImage";
 
 type Category = { id: string; name: string; image: string; sort_order: number };
-type MenuItem = { id: string; name: string; description: string; price: number; image: string; category_id: string; is_trending: boolean; is_new: boolean; discount: number; is_available: boolean };
+type MenuItem = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category_id: string;
+  is_trending: boolean;
+  is_new: boolean;
+  discount: number;
+  is_available: boolean;
+};
 
-function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; index: number; router: any; addToCart: (item: MenuItem) => void }) {
+function AnimatedItemCard({
+  item,
+  index,
+  router,
+  addToCart,
+}: {
+  item: MenuItem;
+  index: number;
+  router: any;
+  addToCart: (item: MenuItem) => void;
+}) {
   const anim = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
@@ -37,14 +59,21 @@ function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; 
     <Animated.View
       style={{
         opacity: anim,
-        transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
+        transform: [
+          {
+            translateY: anim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [30, 0],
+            }),
+          },
+        ],
       }}
     >
       <TouchableOpacity
         style={styles.itemCard}
         onPress={() =>
           router.push({
-            pathname: '/item/[id]',
+            pathname: "/item/[id]",
             params: {
               id: item.id,
               name: item.name,
@@ -60,9 +89,13 @@ function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; 
         <FoodImage uri={item.image} size={80} borderRadius={12} />
         <View style={styles.itemInfo}>
           <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemDesc} numberOfLines={2}>{item.description}</Text>
+          <Text style={styles.itemDesc} numberOfLines={2}>
+            {item.description}
+          </Text>
           <View style={styles.itemFooter}>
-            <Text style={styles.itemPrice}>Rs. {item.price.toLocaleString()}</Text>
+            <Text style={styles.itemPrice}>
+              Rs. {item.price.toLocaleString()}
+            </Text>
             <TouchableOpacity
               style={styles.addButton}
               onPress={(e) => {
@@ -82,29 +115,43 @@ function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; 
 
 export default function MenuScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(params.category as string || null);
+  const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const { addToCart } = useCart();
 
   const fetchData = async () => {
     try {
       const [catsRes, itemsRes] = await Promise.all([
-        supabase.from('categories').select('*').order('sort_order', { ascending: true }),
-        supabase.from('menu_items').select('*').eq('is_available', true).order('sort_order', { ascending: true }),
+        supabase
+          .from("categories")
+          .select("*")
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("menu_items")
+          .select("*")
+          .eq("is_available", true)
+          .order("sort_order", { ascending: true }),
       ]);
 
       if (catsRes.data) setCategories(catsRes.data);
       if (itemsRes.data) setMenuItems(itemsRes.data);
     } catch (error) {
-      console.error('Failed to fetch menu data:', error);
+      console.error("Failed to fetch menu data:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (params.category) {
+      setSelectedCategory(params.category as string);
+    }
+  }, [params.category]);
 
   useEffect(() => {
     fetchData();
@@ -116,7 +163,9 @@ export default function MenuScreen() {
   }, []);
 
   const filteredItems = menuItems.filter((item) => {
-    const matchCategory = selectedCategory ? item.category_id === selectedCategory : true;
+    const matchCategory = selectedCategory
+      ? item.category_id === selectedCategory
+      : true;
     const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
     return matchCategory && matchSearch;
   });
@@ -142,8 +191,12 @@ export default function MenuScreen() {
           placeholderTextColor={APP_COLORS.textSecondary}
         />
         {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={20} color={APP_COLORS.textSecondary} />
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Ionicons
+              name="close-circle"
+              size={20}
+              color={APP_COLORS.textSecondary}
+            />
           </TouchableOpacity>
         )}
       </View>
@@ -164,7 +217,12 @@ export default function MenuScreen() {
               setSelectedCategory(selectedCategory === item.id ? null : item.id)
             }
           >
-            <FoodImage uri={item.image} size={24} borderRadius={12} style={styles.categoryChipImage} />
+            <FoodImage
+              uri={item.image}
+              size={24}
+              borderRadius={12}
+              style={styles.categoryChipImage}
+            />
             <Text
               style={[
                 styles.categoryText,
@@ -192,7 +250,11 @@ export default function MenuScreen() {
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="restaurant-outline" size={48} color={APP_COLORS.textSecondary} />
+            <Ionicons
+              name="restaurant-outline"
+              size={48}
+              color={APP_COLORS.textSecondary}
+            />
             <Text style={styles.emptyText}>No items found</Text>
           </View>
         }
@@ -210,13 +272,22 @@ export default function MenuScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: APP_COLORS.background, paddingTop: 50 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: APP_COLORS.background },
+  container: {
+    flex: 1,
+    backgroundColor: APP_COLORS.background,
+    paddingTop: 50,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: APP_COLORS.background,
+  },
   loadingText: { marginTop: 12, fontSize: 16, color: APP_COLORS.textSecondary },
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
     marginHorizontal: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -226,14 +297,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchInput: { flex: 1, fontSize: 16, color: APP_COLORS.text },
-  categories: { paddingHorizontal: 20, paddingVertical: 12, gap: 8 },
+  categories: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    gap: 8,
+  },
   categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#FFF',
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FFF",
     borderWidth: 1,
     borderColor: APP_COLORS.border,
     marginRight: 8,
@@ -242,34 +319,39 @@ const styles = StyleSheet.create({
     backgroundColor: APP_COLORS.primary,
     borderColor: APP_COLORS.primary,
   },
-  categoryChipImage: { marginRight: 6, overflow: 'hidden' },
+  categoryChipImage: { marginRight: 6, overflow: "hidden" },
   categoryText: { fontSize: 13, color: APP_COLORS.textSecondary },
-  categoryTextActive: { color: '#FFF', fontWeight: '600' },
-  list: { paddingHorizontal: 20, paddingBottom: 100 },
+  categoryTextActive: { color: "#FFF", fontWeight: "600" },
+  list: { paddingHorizontal: 20, paddingBottom: 800 },
   itemCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFF',
+    flexDirection: "row",
+    backgroundColor: "#FFF",
     borderRadius: 16,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: APP_COLORS.border,
   },
-  itemInfo: { flex: 1, marginLeft: 12, justifyContent: 'space-between' },
-  itemName: { fontSize: 16, fontWeight: '600', color: APP_COLORS.text },
+  itemInfo: { flex: 1, marginLeft: 12, justifyContent: "space-between" },
+  itemName: { fontSize: 16, fontWeight: "600", color: APP_COLORS.text },
   itemDesc: { fontSize: 13, color: APP_COLORS.textSecondary, marginTop: 4 },
-  itemFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  itemPrice: { fontSize: 16, fontWeight: '700', color: APP_COLORS.primary },
+  itemFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  itemPrice: { fontSize: 16, fontWeight: "700", color: APP_COLORS.primary },
   addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: APP_COLORS.primary,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
     gap: 2,
   },
-  addButtonText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
-  empty: { alignItems: 'center', paddingVertical: 60 },
+  addButtonText: { color: "#FFF", fontSize: 12, fontWeight: "600" },
+  empty: { alignItems: "center", paddingVertical: 60 },
   emptyText: { fontSize: 16, color: APP_COLORS.textSecondary, marginTop: 12 },
 });
