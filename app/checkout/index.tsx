@@ -89,13 +89,16 @@ export default function CheckoutScreen() {
 
       if (orderError) throw orderError;
 
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        menu_item_id: item.menu_item.id,
-        name: item.menu_item.name,
-        quantity: item.quantity,
-        price: item.menu_item.price,
-      }));
+      const orderItems = items.map((item) => {
+        const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.menu_item.id);
+        return {
+          order_id: order.id,
+          menu_item_id: isValidUuid ? item.menu_item.id : null,
+          name: item.menu_item.name,
+          quantity: item.quantity,
+          price: item.menu_item.price,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from('order_items')
