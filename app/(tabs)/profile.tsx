@@ -99,7 +99,21 @@ export default function ProfileScreen() {
   const { colors } = useTheme();
   const { showAlert } = useThemedAlert();
   const { unreadCount } = useNotifications();
+  const [userName, setUserName] = useState<string | null>(null);
   const styles = createStyles(colors);
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (!user) return;
+      try {
+        const { data } = await supabase.from('users').select('name').eq('id', user.id).single();
+        if (data?.name) setUserName(data.name);
+      } catch (error) {
+        console.error('Failed to fetch user name:', error);
+      }
+    };
+    fetchUserName();
+  }, [user]);
 
   const handleSignOut = async () => {
     try {
@@ -130,7 +144,7 @@ export default function ProfileScreen() {
     );
   }
 
-  const displayName = user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+  const displayName = userName || user.email?.split('@')[0] || 'User';
   const displayEmail = user.email || '';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
