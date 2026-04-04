@@ -19,6 +19,7 @@ import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
 type Branch = { id: string; name: string; address: string; phone: string; delivers_to_city: boolean };
+type Promo = { id: string; code: string; discount: number; min_order: number; title: string; eligibleItemIds: string[] };
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
@@ -45,6 +46,14 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   input: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: c.text },
   disabledInput: { backgroundColor: c.input, color: c.textSecondary },
   textArea: { textAlignVertical: 'top', minHeight: 80 },
+  promoRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  promoInput: { flex: 1, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: c.text },
+  promoButton: { backgroundColor: APP_COLORS.primary, borderRadius: 12, paddingHorizontal: 20, justifyContent: 'center' },
+  promoButtonText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
+  promoApplied: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', borderRadius: 12, padding: 12, marginBottom: 8, gap: 8 },
+  promoAppliedText: { flex: 1, fontSize: 14, fontWeight: '600', color: '#065F46' },
+  promoRemove: { padding: 4 },
+  promoError: { fontSize: 13, color: '#EF4444', marginTop: 4 },
   paymentOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: c.border, gap: 12 },
   paymentOptionActive: { borderColor: APP_COLORS.primary, backgroundColor: 'rgba(230, 57, 70, 0.15)' },
   paymentInfo: { flex: 1 },
@@ -56,6 +65,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
   summaryLabel: { fontSize: 14, color: c.textSecondary },
   summaryValue: { fontSize: 14, color: c.text },
+  discountRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  discountLabel: { fontSize: 14, color: APP_COLORS.success, fontWeight: '600' },
+  discountValue: { fontSize: 14, color: APP_COLORS.success, fontWeight: '700' },
   grandTotalRow: { borderTopWidth: 1, borderTopColor: c.border, paddingTop: 12, marginTop: 4 },
   grandTotalLabel: { fontSize: 18, fontWeight: '700', color: c.text },
   grandTotalValue: { fontSize: 18, fontWeight: '800', color: APP_COLORS.primary },
@@ -83,6 +95,14 @@ export default function CheckoutScreen() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+
+  // Promo state
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<Promo | null>(null);
+  const [promoError, setPromoError] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [discount, setDiscount] = useState(0);
+
   const styles = createStyles(colors);
 
   useEffect(() => {
@@ -95,7 +115,6 @@ export default function CheckoutScreen() {
 
     const fetchData = async () => {
       try {
-        // Get user's default address
         const { data: addresses } = await supabase
           .from('addresses')
           .select('*')
@@ -115,7 +134,6 @@ export default function CheckoutScreen() {
         setUserCity(userAddress.city);
         setDeliveryAddress(userAddress.line1 + (userAddress.line2 ? ', ' + userAddress.line2 : '') + ', ' + userAddress.city);
 
-        // Get city delivery info
         const { data: cityData } = await supabase
           .from('cities')
           .select('id, delivery_time_minutes, delivery_fee')
@@ -126,7 +144,6 @@ export default function CheckoutScreen() {
           setDeliveryTime(cityData.delivery_time_minutes);
           setDeliveryFee(cityData.delivery_fee);
 
-          // Fetch branches and their delivery zones
           const { data: branchesData } = await supabase
             .from('branches')
             .select('*')
@@ -150,7 +167,6 @@ export default function CheckoutScreen() {
 
           setBranches(branchesWithStatus);
 
-          // Auto-select first available branch
           const available = branchesWithStatus.find((b) => b.delivers_to_city);
           if (available) setSelectedBranch(available.id);
         }
@@ -163,6 +179,89 @@ export default function CheckoutScreen() {
 
     fetchData();
   }, [user]);
+
+  const applyPromo = async () => {
+    if (!promoCode.trim()) {
+      setPromoError('Enter a promo code');
+      return;
+    }
+
+    setPromoLoading(true);
+    setPromoError('');
+
+    try {
+      const { data: promo, error } = await supabase
+        .from('promotions')
+        .select('*, promo_items(menu_item_id)')
+        .eq('code', promoCode.toUpperCase().trim())
+        .eq('is_active', true)
+        .single();
+
+      if (error || !promo) {
+        setPromoError('Invalid promo code');
+        setPromoLoading(false);
+        return;
+      }
+
+      // Check minimum order
+      if (total < promo.min_order) {
+        setPromoError(`Minimum order is Rs. ${promo.min_order.toLocaleString()}`);
+        setPromoLoading(false);
+        return;
+      }
+
+      // Check if promo has specific items
+      const eligibleItemIds = promo.promo_items?.map((pi: any) => pi.menu_item_id) || [];
+
+      if (eligibleItemIds.length > 0) {
+        // Check if any cart item is eligible
+        const cartItemIds = items.map((i) => i.menu_item.id);
+        const hasEligibleItem = cartItemIds.some((id) => eligibleItemIds.includes(id));
+
+        if (!hasEligibleItem) {
+          setPromoError('This promo code doesn\'t apply to items in your cart');
+          setPromoLoading(false);
+          return;
+        }
+      }
+
+      // Calculate discount on eligible items only
+      let discountAmount = 0;
+      if (eligibleItemIds.length > 0) {
+        // Only discount eligible items
+        items.forEach((item) => {
+          if (eligibleItemIds.includes(item.menu_item.id)) {
+            discountAmount += item.menu_item.price * item.quantity * (promo.discount / 100);
+          }
+        });
+      } else {
+        // Discount applies to entire order
+        discountAmount = total * (promo.discount / 100);
+      }
+
+      setAppliedPromo({
+        id: promo.id,
+        code: promo.code,
+        discount: promo.discount,
+        min_order: promo.min_order,
+        title: promo.title,
+        eligibleItemIds,
+      });
+      setDiscount(Math.round(discountAmount));
+      setPromoCode('');
+    } catch (error) {
+      setPromoError('Failed to apply promo code');
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const removePromo = () => {
+    setAppliedPromo(null);
+    setDiscount(0);
+    setPromoError('');
+    setPromoCode('');
+  };
 
   if (items.length === 0) {
     return (
@@ -182,7 +281,8 @@ export default function CheckoutScreen() {
     );
   }
 
-  const grandTotal = total + deliveryFee;
+  const subtotal = total - discount;
+  const grandTotal = subtotal + deliveryFee;
 
   const handlePlaceOrder = async () => {
     if (!selectedBranch) {
@@ -218,7 +318,6 @@ export default function CheckoutScreen() {
       const fullAddress = userAddress.line1 + (userAddress.line2 ? ', ' + userAddress.line2 : '') + ', ' + userAddress.city;
       const branch = branches.find((b) => b.id === selectedBranch);
 
-      // Get the pending status ID
       const { data: statusData } = await supabase
         .from('order_statuses')
         .select('id')
@@ -256,24 +355,16 @@ export default function CheckoutScreen() {
         };
       });
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
       if (itemsError) throw itemsError;
 
-      // Create notification for new order (non-blocking)
       const { error: notifError } = await supabase.from('notifications').insert({
         user_id: user.id,
         title: 'Order Placed! 🎉',
         message: `Your order #${order.id.slice(0, 8)} has been placed successfully.`,
         type: 'order',
       });
-      if (notifError) {
-        console.error('Failed to create notification:', notifError);
-      } else {
-        console.log('Notification created successfully');
-      }
+      if (notifError) console.error('Failed to create notification:', notifError);
 
       clearCart();
       router.replace({ pathname: '/checkout/confirmation', params: { orderId: order.id } });
@@ -328,25 +419,15 @@ export default function CheckoutScreen() {
             return (
               <TouchableOpacity
                 key={b.id}
-                style={[
-                  styles.branchCard,
-                  isSelected && styles.branchCardActive,
-                  isDisabled && styles.branchCardDisabled,
-                ]}
+                style={[styles.branchCard, isSelected && styles.branchCardActive, isDisabled && styles.branchCardDisabled]}
                 onPress={() => !isDisabled && setSelectedBranch(b.id)}
                 disabled={isDisabled}
               >
-                <Ionicons
-                  name={isDisabled ? 'ban' : isSelected ? 'radio-button-on' : 'radio-button-off'}
-                  size={22}
-                  color={isDisabled ? colors.textSecondary : APP_COLORS.primary}
-                />
+                <Ionicons name={isDisabled ? 'ban' : isSelected ? 'radio-button-on' : 'radio-button-off'} size={22} color={isDisabled ? colors.textSecondary : APP_COLORS.primary} />
                 <View style={styles.branchInfo}>
                   <Text style={[styles.branchName, isDisabled && styles.branchNameDisabled]}>{b.name}</Text>
                   <Text style={styles.branchAddress}>{b.address}</Text>
-                  {isDisabled && (
-                    <Text style={styles.noDeliveryText}>No delivery to {userCity}</Text>
-                  )}
+                  {isDisabled && <Text style={styles.noDeliveryText}>No delivery to {userCity}</Text>}
                 </View>
               </TouchableOpacity>
             );
@@ -357,70 +438,65 @@ export default function CheckoutScreen() {
           <Text style={styles.sectionTitle}>Delivery Details</Text>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Delivery Address</Text>
-            <TextInput
-              style={[styles.input, styles.disabledInput]}
-              value={deliveryAddress}
-              editable={false}
-              multiline
-              numberOfLines={2}
-            />
+            <TextInput style={[styles.input, styles.disabledInput]} value={deliveryAddress} editable={false} multiline numberOfLines={2} />
           </View>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Phone Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="+94 7X XXX XXXX"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              placeholderTextColor={colors.textSecondary}
-            />
+            <TextInput style={styles.input} placeholder="+94 7X XXX XXXX" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholderTextColor={colors.textSecondary} />
           </View>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Delivery Instructions (Optional)</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="e.g., Ring the bell, 3rd floor"
-              value={instructions}
-              onChangeText={setInstructions}
-              multiline
-              numberOfLines={2}
-              placeholderTextColor={colors.textSecondary}
-            />
+            <TextInput style={[styles.input, styles.textArea]} placeholder="e.g., Ring the bell, 3rd floor" value={instructions} onChangeText={setInstructions} multiline numberOfLines={2} placeholderTextColor={colors.textSecondary} />
           </View>
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Promo Code</Text>
+          {appliedPromo ? (
+            <View style={styles.promoApplied}>
+              <Ionicons name="checkmark-circle" size={20} color="#065F46" />
+              <Text style={styles.promoAppliedText}>{appliedPromo.code} ({appliedPromo.discount}% OFF)</Text>
+              <TouchableOpacity style={styles.promoRemove} onPress={removePromo}>
+                <Ionicons name="close-circle" size={22} color="#065F46" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <View style={styles.promoRow}>
+                <TextInput
+                  style={styles.promoInput}
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChangeText={(t) => { setPromoCode(t); setPromoError(''); }}
+                  placeholderTextColor={colors.textSecondary}
+                  autoCapitalize="characters"
+                />
+                <TouchableOpacity style={styles.promoButton} onPress={applyPromo} disabled={promoLoading}>
+                  {promoLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.promoButtonText}>Apply</Text>}
+                </TouchableOpacity>
+              </View>
+              {promoError ? <Text style={styles.promoError}>{promoError}</Text> : null}
+            </>
+          )}
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
-          <TouchableOpacity
-            style={[styles.paymentOption, paymentMethod === 'cash' && styles.paymentOptionActive]}
-            onPress={() => setPaymentMethod('cash')}
-          >
+          <TouchableOpacity style={[styles.paymentOption, paymentMethod === 'cash' && styles.paymentOptionActive]} onPress={() => setPaymentMethod('cash')}>
             <Ionicons name="cash" size={24} color={APP_COLORS.primary} />
             <View style={styles.paymentInfo}>
               <Text style={styles.paymentName}>Cash on Delivery</Text>
               <Text style={styles.paymentDesc}>Pay when you receive</Text>
             </View>
-            <Ionicons
-              name={paymentMethod === 'cash' ? 'radio-button-on' : 'radio-button-off'}
-              size={22}
-              color={APP_COLORS.primary}
-            />
+            <Ionicons name={paymentMethod === 'cash' ? 'radio-button-on' : 'radio-button-off'} size={22} color={APP_COLORS.primary} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.paymentOption, paymentMethod === 'card' && styles.paymentOptionActive]}
-            onPress={() => setPaymentMethod('card')}
-          >
+          <TouchableOpacity style={[styles.paymentOption, paymentMethod === 'card' && styles.paymentOptionActive]} onPress={() => setPaymentMethod('card')}>
             <Ionicons name="card" size={24} color={APP_COLORS.primary} />
             <View style={styles.paymentInfo}>
               <Text style={styles.paymentName}>Card Payment</Text>
               <Text style={styles.paymentDesc}>Pay at the branch</Text>
             </View>
-            <Ionicons
-              name={paymentMethod === 'card' ? 'radio-button-on' : 'radio-button-off'}
-              size={22}
-              color={APP_COLORS.primary}
-            />
+            <Ionicons name={paymentMethod === 'card' ? 'radio-button-on' : 'radio-button-off'} size={22} color={APP_COLORS.primary} />
           </TouchableOpacity>
         </View>
 
@@ -428,18 +504,20 @@ export default function CheckoutScreen() {
           <Text style={styles.sectionTitle}>Order Summary</Text>
           {items.map((item) => (
             <View key={item.menu_item.id} style={styles.summaryItem}>
-              <Text style={styles.summaryItemName}>
-                {item.menu_item.name} x{item.quantity}
-              </Text>
-              <Text style={styles.summaryItemPrice}>
-                Rs. {(item.menu_item.price * item.quantity).toLocaleString()}
-              </Text>
+              <Text style={styles.summaryItemName}>{item.menu_item.name} x{item.quantity}</Text>
+              <Text style={styles.summaryItemPrice}>Rs. {(item.menu_item.price * item.quantity).toLocaleString()}</Text>
             </View>
           ))}
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
             <Text style={styles.summaryValue}>Rs. {total.toLocaleString()}</Text>
           </View>
+          {discount > 0 && (
+            <View style={styles.discountRow}>
+              <Text style={styles.discountLabel}>Discount ({appliedPromo?.code})</Text>
+              <Text style={styles.discountValue}>- Rs. {discount.toLocaleString()}</Text>
+            </View>
+          )}
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Delivery Fee</Text>
             <Text style={styles.summaryValue}>Rs. {deliveryFee.toLocaleString()}</Text>
@@ -453,11 +531,7 @@ export default function CheckoutScreen() {
 
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder} disabled={loading || !selectedBranch}>
-          {loading ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.placeOrderText}>Place Order - Rs. {grandTotal.toLocaleString()}</Text>
-          )}
+          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.placeOrderText}>Place Order - Rs. {grandTotal.toLocaleString()}</Text>}
         </TouchableOpacity>
       </View>
     </View>

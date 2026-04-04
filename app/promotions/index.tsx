@@ -1,43 +1,26 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useTheme } from '../../src/context/ThemeContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
+import { supabase } from '../../src/lib/supabaseClient';
 import { FoodImage } from '../../src/components/FoodImage';
 
-const PROMOTIONS = [
-  {
-    id: '1',
-    title: '20% OFF Burgers',
-    description: 'Get 20% off on all burgers this week. Use code BURGER20 at checkout.',
-    code: 'BURGER20',
-    discount: 20,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&h=300&fit=crop',
-    validUntil: 'Apr 10, 2026',
-    minOrder: 1000,
-  },
-  {
-    id: '2',
-    title: 'Free Delivery',
-    description: 'Free delivery on orders above Rs. 2000. No code needed!',
-    code: 'FREEDEL',
-    discount: 0,
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=300&fit=crop',
-    validUntil: 'Apr 15, 2026',
-    minOrder: 2000,
-  },
-  {
-    id: '3',
-    title: 'Combo Deal - Rs. 1500',
-    description: 'Burger + Fries + Drink combo at just Rs. 1500. Save Rs. 500!',
-    code: 'COMBO1500',
-    discount: 25,
-    image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=600&h=300&fit=crop',
-    validUntil: 'Apr 20, 2026',
-    minOrder: 1500,
-  },
-];
+type PromoItem = { menu_items: { id: string; name: string; image: string; price: number } };
+type Promo = {
+  id: string;
+  title: string;
+  description: string;
+  code: string;
+  discount: number;
+  image: string;
+  valid_until: string;
+  min_order: number;
+  is_active: boolean;
+  promo_items: PromoItem[];
+};
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
@@ -62,12 +45,52 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   applyButton: { flex: 1, backgroundColor: APP_COLORS.primary, borderRadius: 10, paddingVertical: 8, alignItems: 'center' },
   applyText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
   validText: { fontSize: 12, color: c.textSecondary },
+  eligibleSection: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.border },
+  eligibleTitle: { fontSize: 13, fontWeight: '600', color: c.textSecondary, marginBottom: 8 },
+  eligibleItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.input, borderRadius: 10, padding: 8, marginBottom: 6, gap: 10 },
+  eligibleItemImage: { borderRadius: 8 },
+  eligibleItemName: { fontSize: 13, fontWeight: '500', color: c.text, flex: 1 },
+  eligibleItemPrice: { fontSize: 13, fontWeight: '700', color: APP_COLORS.primary },
+  allItemsBadge: { backgroundColor: '#D1FAE5', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, alignSelf: 'flex-start', marginTop: 4 },
+  allItemsText: { fontSize: 12, fontWeight: '600', color: '#065F46' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.background },
 });
 
 export default function PromotionsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const [promos, setPromos] = useState<Promo[]>([]);
+  const [loading, setLoading] = useState(true);
   const styles = createStyles(colors);
+
+  useEffect(() => {
+    const fetchPromos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('promotions')
+          .select('*, promo_items(menu_items(id, name, image, price))')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setPromos(data || []);
+      } catch (error) {
+        console.error('Failed to fetch promotions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPromos();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={APP_COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -86,36 +109,63 @@ export default function PromotionsScreen() {
           <Text style={styles.bannerSubtitle}>Save big on your favorite meals</Text>
         </View>
 
-        {PROMOTIONS.map((promo) => (
-          <View key={promo.id} style={styles.promoCard}>
-            <FoodImage uri={promo.image} size={400} borderRadius={0} style={styles.promoImage} />
-            <View style={styles.promoContent}>
-              <View style={styles.promoHeader}>
-                <Text style={styles.promoTitle}>{promo.title}</Text>
-                {promo.discount > 0 && (
-                  <View style={styles.discountBadge}>
-                    <Text style={styles.discountText}>{promo.discount}% OFF</Text>
+        {promos.map((promo) => {
+          const eligibleItems = promo.promo_items?.map((pi) => pi.menu_items).filter(Boolean) || [];
+          const appliesToAll = eligibleItems.length === 0;
+
+          return (
+            <View key={promo.id} style={styles.promoCard}>
+              <FoodImage uri={promo.image} size={400} borderRadius={0} style={styles.promoImage} />
+              <View style={styles.promoContent}>
+                <View style={styles.promoHeader}>
+                  <Text style={styles.promoTitle}>{promo.title}</Text>
+                  {promo.discount > 0 && (
+                    <View style={styles.discountBadge}>
+                      <Text style={styles.discountText}>{promo.discount}% OFF</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.promoDesc}>{promo.description}</Text>
+
+                <View style={styles.promoFooter}>
+                  <View style={styles.codeContainer}>
+                    <Text style={styles.codeText}>{promo.code}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.applyButton} onPress={() => router.push('/(tabs)/menu')}>
+                    <Text style={styles.applyText}>Order Now</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {appliesToAll ? (
+                  <View style={styles.allItemsBadge}>
+                    <Text style={styles.allItemsText}>✓ Applies to all items</Text>
+                  </View>
+                ) : (
+                  <View style={styles.eligibleSection}>
+                    <Text style={styles.eligibleTitle}>Eligible Items:</Text>
+                    {eligibleItems.map((item) => (
+                      <View key={item.id} style={styles.eligibleItem}>
+                        <FoodImage uri={item.image} size={40} borderRadius={8} style={styles.eligibleItemImage} />
+                        <Text style={styles.eligibleItemName}>{item.name}</Text>
+                        <Text style={styles.eligibleItemPrice}>Rs. {item.price.toLocaleString()}</Text>
+                      </View>
+                    ))}
                   </View>
                 )}
-              </View>
-              <Text style={styles.promoDesc}>{promo.description}</Text>
 
-              <View style={styles.promoFooter}>
-                <View style={styles.codeContainer}>
-                  <Text style={styles.codeText}>{promo.code}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.applyButton}
-                  onPress={() => router.push('/(tabs)/menu')}
-                >
-                  <Text style={styles.applyText}>Order Now</Text>
-                </TouchableOpacity>
+                <Text style={styles.validText}>Valid until {new Date(promo.valid_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • Min order: Rs. {promo.min_order.toLocaleString()}</Text>
               </View>
-
-              <Text style={styles.validText}>Valid until {promo.validUntil}</Text>
             </View>
+          );
+        })}
+
+        {promos.length === 0 && (
+          <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+            <Ionicons name="gift-outline" size={64} color={colors.textSecondary} />
+            <Text style={{ fontSize: 18, fontWeight: '600', color: colors.text, marginTop: 16 }}>No promotions available</Text>
+            <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 8 }}>Check back later for new deals!</Text>
           </View>
-        ))}
+        )}
       </ScrollView>
     </View>
   );
