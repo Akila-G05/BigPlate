@@ -14,13 +14,14 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
+import { useAuth } from '../../src/context/AuthContext';
 import { supabase } from '../../src/lib/supabaseClient';
 import { FoodImage } from '../../src/components/FoodImage';
 
 type Category = { id: string; name: string; image: string; sort_order: number };
 type MenuItem = { id: string; name: string; description: string; price: number; image: string; category_id: string; is_trending: boolean; is_new: boolean; discount: number; is_available: boolean };
 
-function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; index: number; router: any; addToCart: (item: MenuItem) => void }) {
+function AnimatedItemCard({ item, index, router, addToCart, isFavorite, onToggleFavorite }: { item: MenuItem; index: number; router: any; addToCart: (item: MenuItem) => void; isFavorite: boolean; onToggleFavorite: (id: string) => void }) {
   const anim = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
@@ -59,7 +60,18 @@ function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; 
       >
         <FoodImage uri={item.image} size={80} borderRadius={12} />
         <View style={styles.itemInfo}>
-          <Text style={styles.itemName}>{item.name}</Text>
+          <View style={styles.itemHeader}>
+            <Text style={styles.itemName}>{item.name}</Text>
+            <TouchableOpacity
+              style={styles.favButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(item.id);
+              }}
+            >
+              <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? APP_COLORS.primary : APP_COLORS.textSecondary} />
+            </TouchableOpacity>
+          </View>
           <Text style={styles.itemDesc} numberOfLines={2}>{item.description}</Text>
           <View style={styles.itemFooter}>
             <Text style={styles.itemPrice}>Rs. {item.price.toLocaleString()}</Text>
@@ -82,13 +94,46 @@ function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; 
 
 export default function MenuScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const { addToCart } = useCart();
+
+  const fetchFavorites = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('favorites')
+      .select('menu_item_id')
+      .eq('user_id', user.id);
+    if (data) {
+      setFavorites(new Set(data.map((f) => f.menu_item_id)));
+    }
+  };
+
+  const toggleFavorite = async (menuItemId: string) => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+
+    const isFav = favorites.has(menuItemId);
+    if (isFav) {
+      await supabase.from('favorites').delete().eq('user_id', user.id).eq('menu_item_id', menuItemId);
+      setFavorites((prev) => {
+        const next = new Set(prev);
+        next.delete(menuItemId);
+        return next;
+      });
+    } else {
+      await supabase.from('favorites').insert({ user_id: user.id, menu_item_id: menuItemId });
+      setFavorites((prev) => new Set(prev).add(menuItemId));
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -110,9 +155,13 @@ export default function MenuScreen() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    fetchFavorites();
+  }, [user]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchData().then(() => setRefreshing(false));
+    Promise.all([fetchData(), fetchFavorites()]).then(() => setRefreshing(false));
   }, []);
 
   const filteredItems = menuItems.filter((item) => {
@@ -202,6 +251,8 @@ export default function MenuScreen() {
             index={index}
             router={router}
             addToCart={addToCart}
+            isFavorite={favorites.has(item.id)}
+            onToggleFavorite={toggleFavorite}
           />
         )}
       />
@@ -255,8 +306,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: APP_COLORS.border,
   },
-  itemInfo: { flex: 1, marginLeft: 12, justifyContent: 'space-between' },
-  itemName: { fontSize: 16, fontWeight: '600', color: APP_COLORS.text },
+  itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  itemName: { flex: 1, fontSize: 16, fontWeight: '600', color: APP_COLORS.text },
+  favButton: { padding: 4 },
   itemDesc: { fontSize: 13, color: APP_COLORS.textSecondary, marginTop: 4 },
   itemFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   itemPrice: { fontSize: 16, fontWeight: '700', color: APP_COLORS.primary },

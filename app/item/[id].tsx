@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
+import { useAuth } from '../../src/context/AuthContext';
 import { supabase } from '../../src/lib/supabaseClient';
 import { FoodImage } from '../../src/components/FoodImage';
 
@@ -26,9 +27,11 @@ export default function ItemDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [item, setItem] = useState<MenuItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -50,6 +53,36 @@ export default function ItemDetailScreen() {
 
     fetchItem();
   }, [params.id]);
+
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (!user || !item) return;
+      const { data } = await supabase
+        .from('favorites')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('menu_item_id', item.id)
+        .maybeSingle();
+      setIsFavorite(!!data);
+    };
+    checkFavorite();
+  }, [user, item]);
+
+  const toggleFavorite = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    if (!item) return;
+
+    if (isFavorite) {
+      await supabase.from('favorites').delete().eq('user_id', user.id).eq('menu_item_id', item.id);
+      setIsFavorite(false);
+    } else {
+      await supabase.from('favorites').insert({ user_id: user.id, menu_item_id: item.id });
+      setIsFavorite(true);
+    }
+  };
 
   const handleAddToCart = () => {
     if (!item) return;
@@ -90,7 +123,9 @@ export default function ItemDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={APP_COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Item Details</Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity style={styles.favButton} onPress={toggleFavorite}>
+          <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={isFavorite ? APP_COLORS.primary : APP_COLORS.text} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -192,6 +227,7 @@ const styles = StyleSheet.create({
   },
   backButton: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
+  favButton: { padding: 4 },
   scrollContent: { paddingBottom: 100 },
   itemDetailImage: {
     width: '100%',
