@@ -27,9 +27,7 @@ export default function CheckoutScreen() {
   const [userCity, setUserCity] = useState<string | null>(null);
   const [deliveryTime, setDeliveryTime] = useState(30);
   const [deliveryFee, setDeliveryFee] = useState(250);
-  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
   const [instructions, setInstructions] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [loading, setLoading] = useState(false);
@@ -63,8 +61,6 @@ export default function CheckoutScreen() {
 
         const userAddress = addresses[0];
         setUserCity(userAddress.city);
-        setName(userAddress.line1 + (userAddress.line2 ? ', ' + userAddress.line2 : ''));
-        setAddress(userAddress.line1 + (userAddress.line2 ? '\n' + userAddress.line2 : '') + '\n' + userAddress.city);
 
         // Get city delivery info
         const { data: cityData } = await supabase
@@ -140,16 +136,8 @@ export default function CheckoutScreen() {
       Alert.alert('Error', 'No branch delivers to your area');
       return;
     }
-    if (!name.trim()) {
-      Alert.alert('Error', 'Please enter your name');
-      return;
-    }
     if (!phone.trim()) {
       Alert.alert('Error', 'Please enter your phone number');
-      return;
-    }
-    if (!address.trim()) {
-      Alert.alert('Error', 'Please enter your delivery address');
       return;
     }
     if (!user) {
@@ -160,6 +148,22 @@ export default function CheckoutScreen() {
 
     setLoading(true);
     try {
+      // Get user's address for the order
+      const { data: addresses } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_default', true)
+        .limit(1);
+
+      if (!addresses || addresses.length === 0) {
+        Alert.alert('Error', 'No delivery address found');
+        setLoading(false);
+        return;
+      }
+
+      const userAddress = addresses[0];
+      const fullAddress = userAddress.line1 + (userAddress.line2 ? ', ' + userAddress.line2 : '') + ', ' + userAddress.city;
       const branch = branches.find((b) => b.id === selectedBranch);
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -170,9 +174,9 @@ export default function CheckoutScreen() {
           total: grandTotal,
           delivery_fee: deliveryFee,
           payment_method: paymentMethod,
-          delivery_name: name,
+          delivery_name: userAddress.label,
           delivery_phone: phone,
-          delivery_address: address,
+          delivery_address: fullAddress,
           delivery_instructions: instructions || null,
           status: 'pending',
         })
@@ -279,16 +283,6 @@ export default function CheckoutScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery Details</Text>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Full Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Your name"
-              value={name}
-              onChangeText={setName}
-              placeholderTextColor={APP_COLORS.textSecondary}
-            />
-          </View>
-          <View style={styles.inputGroup}>
             <Text style={styles.label}>Phone Number</Text>
             <TextInput
               style={styles.input}
@@ -296,18 +290,6 @@ export default function CheckoutScreen() {
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
-              placeholderTextColor={APP_COLORS.textSecondary}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Delivery Address</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Enter your full address"
-              value={address}
-              onChangeText={setAddress}
-              multiline
-              numberOfLines={3}
               placeholderTextColor={APP_COLORS.textSecondary}
             />
           </View>
