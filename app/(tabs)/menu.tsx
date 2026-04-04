@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,32 +8,22 @@ import {
   TextInput,
   RefreshControl,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { APP_COLORS, CATEGORIES } from '../../src/constants';
+import { APP_COLORS } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
-import type { MenuItem } from '../../src/types';
-import { FOOD_IMAGES } from '../../src/types';
+import { supabase } from '../../src/lib/supabaseClient';
 import { FoodImage } from '../../src/components/FoodImage';
 
-const ALL_ITEMS: MenuItem[] = [
-  { id: '1', name: 'Tower Burger', description: 'Massive stacked burger with premium toppings', price: 3100, image: FOOD_IMAGES.burger, category_id: 'burgers', is_trending: true },
-  { id: '2', name: 'Beef Burger', description: 'Classic beef burger with special sauce', price: 850, image: FOOD_IMAGES.beef_burger, category_id: 'burgers', is_trending: true, discount: 20 },
-  { id: '3', name: 'Chicken Submarine', description: 'Loaded chicken sub with fresh veggies', price: 1200, image: FOOD_IMAGES.sub, category_id: 'subs', is_trending: true, is_new: true },
-  { id: '4', name: 'Devilled Chicken', description: 'Spicy Indo-Chinese devilled chicken', price: 1100, image: FOOD_IMAGES.devilled_chicken, category_id: 'chinese', is_trending: true },
-  { id: '5', name: 'Chicken Fried Rice', description: 'Wok-fried rice with chicken and vegetables', price: 950, image: FOOD_IMAGES.fried_rice, category_id: 'rice', is_trending: false },
-  { id: '6', name: 'Chicken Biryani', description: 'Aromatic basmati rice with spiced chicken', price: 1050, image: FOOD_IMAGES.biryani, category_id: 'indian', is_trending: false },
-  { id: '7', name: 'Chicken Kottu', description: 'Chopped roti with chicken and spices', price: 900, image: FOOD_IMAGES.kottu, category_id: 'kottu', is_trending: false },
-  { id: '8', name: 'Garlic Naan', description: 'Fresh baked garlic naan bread', price: 350, image: FOOD_IMAGES.naan, category_id: 'indian', is_trending: false },
-  { id: '9', name: 'Chilli Beef', description: 'Spicy stir-fried beef with peppers', price: 1200, image: FOOD_IMAGES.chilli_beef, category_id: 'chinese', is_trending: false },
-  { id: '10', name: 'Mango Lassi', description: 'Creamy yogurt mango smoothie', price: 450, image: FOOD_IMAGES.lassi, category_id: 'drinks', is_trending: false },
-];
+type Category = { id: string; name: string; image: string; sort_order: number };
+type MenuItem = { id: string; name: string; description: string; price: number; image: string; category_id: string; is_trending: boolean; is_new: boolean; discount: number; is_available: boolean };
 
 function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; index: number; router: any; addToCart: (item: MenuItem) => void }) {
   const anim = useState(new Animated.Value(0))[0];
 
-  useState(() => {
+  useEffect(() => {
     Animated.spring(anim, {
       toValue: 1,
       delay: index * 80,
@@ -41,7 +31,7 @@ function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; 
       tension: 50,
       friction: 7,
     }).start();
-  });
+  }, []);
 
   return (
     <Animated.View
@@ -92,21 +82,53 @@ function AnimatedItemCard({ item, index, router, addToCart }: { item: MenuItem; 
 
 export default function MenuScreen() {
   const router = useRouter();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const { addToCart } = useCart();
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+  const fetchData = async () => {
+    try {
+      const [catsRes, itemsRes] = await Promise.all([
+        supabase.from('categories').select('*').order('sort_order', { ascending: true }),
+        supabase.from('menu_items').select('*').eq('is_available', true).order('sort_order', { ascending: true }),
+      ]);
+
+      if (catsRes.data) setCategories(catsRes.data);
+      if (itemsRes.data) setMenuItems(itemsRes.data);
+    } catch (error) {
+      console.error('Failed to fetch menu data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
-  const filteredItems = ALL_ITEMS.filter((item) => {
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData().then(() => setRefreshing(false));
+  }, []);
+
+  const filteredItems = menuItems.filter((item) => {
     const matchCategory = selectedCategory ? item.category_id === selectedCategory : true;
     const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
     return matchCategory && matchSearch;
   });
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={APP_COLORS.primary} />
+        <Text style={styles.loadingText}>Loading menu...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -129,7 +151,7 @@ export default function MenuScreen() {
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={CATEGORIES}
+        data={categories}
         keyExtractor={(cat) => cat.id}
         contentContainerStyle={styles.categories}
         renderItem={({ item }) => (
@@ -189,6 +211,8 @@ export default function MenuScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: APP_COLORS.background, paddingTop: 50 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: APP_COLORS.background },
+  loadingText: { marginTop: 12, fontSize: 16, color: APP_COLORS.textSecondary },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
