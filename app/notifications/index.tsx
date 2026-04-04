@@ -7,10 +7,10 @@ import { useNotifications } from '../../src/context/NotificationContext';
 import { useAuth } from '../../src/context/AuthContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 
-const NOTIF_COLORS: Record<string, { icon: string; bg: string; border: string; dot: string }> = {
-  order: { icon: '#3B82F6', bg: '#EFF6FF', border: '#BFDBFE', dot: '#3B82F6' },
-  promo: { icon: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
-  system: { icon: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB', dot: '#6B7280' },
+const NOTIF_COLORS: Record<string, { icon: string; bg: string; dot: string }> = {
+  order: { icon: '#3B82F6', bg: '#DBEAFE', dot: '#3B82F6' },
+  promo: { icon: '#F59E0B', bg: '#FEF3C7', dot: '#F59E0B' },
+  system: { icon: '#6B7280', bg: '#F3F4F6', dot: '#6B7280' },
 };
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
@@ -21,7 +21,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   markAllText: { fontSize: 14, color: APP_COLORS.primary, fontWeight: '600' },
   list: { padding: 20, paddingBottom: 100 },
   notifCard: { flexDirection: 'row', backgroundColor: c.card, borderRadius: 16, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: c.border, gap: 12 },
-  notifCardUnread: { borderWidth: 2 },
+  notifCardUnread: { borderColor: APP_COLORS.primary, backgroundColor: 'rgba(230, 57, 70, 0.05)' },
   iconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
   notifContent: { flex: 1 },
   notifHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
@@ -136,11 +136,7 @@ export default function NotificationsScreen() {
           const isUnread = !item.is_read;
           return (
             <TouchableOpacity
-              style={[
-                styles.notifCard,
-                { backgroundColor: nc.bg, borderColor: nc.border },
-                isUnread && { borderWidth: 2 },
-              ]}
+              style={[styles.notifCard, isUnread && styles.notifCardUnread]}
               onPress={() => markAsRead(item.id)}
             >
               <View style={[styles.iconContainer, { backgroundColor: nc.bg }]}>
