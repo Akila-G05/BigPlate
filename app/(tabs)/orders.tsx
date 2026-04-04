@@ -8,14 +8,6 @@ import { useTheme } from '../../src/context/ThemeContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
-const STATUS_COLORS: Record<string, { bg: string; text: string; icon: string; dot: string }> = {
-  pending: { bg: '#FEF3C7', text: '#92400E', icon: '#F59E0B', dot: '#F59E0B' },
-  confirmed: { bg: '#DBEAFE', text: '#1E40AF', icon: '#3B82F6', dot: '#3B82F6' },
-  preparing: { bg: '#EDE9FE', text: '#5B21B6', icon: '#8B5CF6', dot: '#8B5CF6' },
-  delivering: { bg: '#FEE2E2', text: '#991B1B', icon: '#EF4444', dot: '#EF4444' },
-  delivered: { bg: '#D1FAE5', text: '#065F46', icon: '#10B981', dot: '#10B981' },
-};
-
 type OrderStatus = { id: string; name: string; label: string; icon: string; sort_order: number };
 type OrderItem = { id: string; order_id: string; menu_item_id: string; name: string; quantity: number; price: number };
 type Order = {
@@ -34,6 +26,14 @@ type Order = {
   created_at: string;
   order_items: OrderItem[];
   order_statuses: OrderStatus;
+};
+
+const STATUS_COLORS: Record<string, { bg: string; text: string; icon: string; dot: string }> = {
+  pending: { bg: '#FEF3C7', text: '#92400E', icon: '#F59E0B', dot: '#F59E0B' },
+  confirmed: { bg: '#DBEAFE', text: '#1E40AF', icon: '#3B82F6', dot: '#3B82F6' },
+  preparing: { bg: '#EDE9FE', text: '#5B21B6', icon: '#8B5CF6', dot: '#8B5CF6' },
+  delivering: { bg: '#FEE2E2', text: '#991B1B', icon: '#EF4444', dot: '#EF4444' },
+  delivered: { bg: '#D1FAE5', text: '#065F46', icon: '#10B981', dot: '#10B981' },
 };
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
@@ -215,7 +215,6 @@ export default function OrdersScreen() {
                     <View style={styles.progressSteps}>
                       {statuses.map((step, index) => {
                         const isActive = index < currentStatusSort;
-                        const isCurrent = index === currentStatusSort - 1;
                         const stepColor = STATUS_COLORS[step.name];
 
                         return (

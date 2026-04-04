@@ -52,7 +52,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  stepText: { fontSize: 11, marginTop: 6, fontWeight: '600' },
+  stepDotPending: { backgroundColor: '#E5E7EB' },
+  stepText: { fontSize: 11, color: c.text, marginTop: 6, fontWeight: '600' },
+  stepTextPending: { color: c.textSecondary },
   stepLine: { flex: 1, height: 2, backgroundColor: '#E5E7EB', marginHorizontal: 4, marginBottom: 20 },
   trackButton: {
     flexDirection: 'row',
@@ -66,7 +68,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: 12,
   },
   trackButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  homeButton: { paddingVertical: 12 },
+  homeButton: {
+    paddingVertical: 12,
+  },
   homeButtonText: { color: c.textSecondary, fontSize: 15, fontWeight: '600' },
 });
 
@@ -76,14 +80,6 @@ export default function OrderConfirmationScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const orderId = (params.orderId as string)?.slice(0, 8) || '';
-
-  const steps = [
-    { label: 'Pending', icon: 'time', color: STATUS_COLORS.pending },
-    { label: 'Preparing', icon: 'flame', color: STATUS_COLORS.preparing },
-    { label: 'Delivered', icon: 'home', color: STATUS_COLORS.delivered },
-  ];
-
-  const currentStep = 0; // Pending
 
   return (
     <View style={styles.container}>
@@ -105,12 +101,10 @@ export default function OrderConfirmationScreen() {
             </View>
           </View>
           <View style={styles.infoRow}>
-            <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS.pending.bg }]}>
-              <Ionicons name="time" size={16} color={STATUS_COLORS.pending.icon} />
-              <Text style={[styles.statusText, { color: STATUS_COLORS.pending.text }]}>Pending</Text>
-            </View>
+            <Ionicons name="time" size={20} color={STATUS_COLORS.pending.icon} />
             <View style={styles.infoText}>
               <Text style={styles.infoLabel}>Status</Text>
+              <Text style={[styles.infoValue, { color: STATUS_COLORS.pending.text }]}>Pending</Text>
             </View>
           </View>
           <View style={styles.infoRow}>
@@ -123,28 +117,26 @@ export default function OrderConfirmationScreen() {
         </View>
 
         <View style={styles.statusSteps}>
-          {steps.map((step, index) => {
-            const isActive = index <= currentStep;
-            const isCurrent = index === currentStep;
-            return (
-              <View key={step.label} style={styles.step}>
-                <View
-                  style={[
-                    styles.stepDot,
-                    { backgroundColor: isActive ? step.color.icon : '#E5E7EB' },
-                  ]}
-                >
-                  <Ionicons name={step.icon as any} size={16} color="#FFF" />
-                </View>
-                <Text style={[styles.stepText, { color: isActive ? step.color.text : colors.textSecondary }]}>
-                  {step.label}
-                </Text>
-                {index < steps.length - 1 && (
-                  <View style={styles.stepLine} />
-                )}
-              </View>
-            );
-          })}
+          <View style={styles.step}>
+            <View style={[styles.stepDot, { backgroundColor: STATUS_COLORS.pending.icon }]}>
+              <Ionicons name="time" size={16} color="#FFF" />
+            </View>
+            <Text style={[styles.stepText, { color: STATUS_COLORS.pending.text }]}>Pending</Text>
+          </View>
+          <View style={styles.stepLine} />
+          <View style={styles.step}>
+            <View style={[styles.stepDot, styles.stepDotPending]}>
+              <Ionicons name="flame" size={14} color={colors.textSecondary} />
+            </View>
+            <Text style={[styles.stepText, styles.stepTextPending]}>Preparing</Text>
+          </View>
+          <View style={styles.stepLine} />
+          <View style={styles.step}>
+            <View style={[styles.stepDot, styles.stepDotPending]}>
+              <Ionicons name="home" size={14} color={colors.textSecondary} />
+            </View>
+            <Text style={[styles.stepText, styles.stepTextPending]}>Delivered</Text>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -165,8 +157,3 @@ export default function OrderConfirmationScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  statusText: { fontSize: 14, fontWeight: '700' },
-});
