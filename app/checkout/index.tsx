@@ -254,13 +254,18 @@ export default function CheckoutScreen() {
 
       if (itemsError) throw itemsError;
 
-      // Create notification for new order
-      await supabase.from('notifications').insert({
+      // Create notification for new order (non-blocking)
+      const { error: notifError } = await supabase.from('notifications').insert({
         user_id: user.id,
         title: 'Order Placed! 🎉',
         message: `Your order #${order.id.slice(0, 8)} has been placed successfully.`,
         type: 'order',
       });
+      if (notifError) {
+        console.error('Failed to create notification:', notifError);
+      } else {
+        console.log('Notification created successfully');
+      }
 
       clearCart();
       router.replace('/checkout/confirmation');
