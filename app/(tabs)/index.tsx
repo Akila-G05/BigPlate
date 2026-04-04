@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { APP_COLORS } from "../../src/constants";
 import { useCart } from "../../src/context/CartContext";
+import { useNotifications } from "../../src/context/NotificationContext";
 import { useTheme } from "../../src/context/ThemeContext";
 import type { ThemeColors } from "../../src/context/ThemeContext";
 import { supabase } from "../../src/lib/supabaseClient";
@@ -82,6 +83,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { addToCart, itemCount } = useCart();
+  const { unreadCount } = useNotifications();
   const styles = createStyles(colors);
   const [categories, setCategories] = useState<Category[]>([]);
   const [trendingItems, setTrendingItems] = useState<MenuItem[]>([]);
@@ -142,12 +144,12 @@ export default function HomeScreen() {
         </View>
         <TouchableOpacity
           style={styles.cartButton}
-          onPress={() => router.push("/(tabs)/cart")}
+          onPress={() => router.push("/notifications")}
         >
-          <Ionicons name="cart-outline" size={24} color={colors.text} />
-          {itemCount > 0 && (
+          <Ionicons name="notifications-outline" size={24} color={colors.text} />
+          {unreadCount > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{itemCount}</Text>
+              <Text style={styles.badgeText}>{unreadCount}</Text>
             </View>
           )}
         </TouchableOpacity>
