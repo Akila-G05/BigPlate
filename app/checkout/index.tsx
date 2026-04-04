@@ -8,8 +8,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Modal,
-  FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,18 +16,17 @@ import { useCart } from '../../src/context/CartContext';
 import { useAuth } from '../../src/context/AuthContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
-type City = { id: string; name: string; delivery_time_minutes: number; delivery_fee: number };
-type Branch = { id: string; name: string; address: string; phone: string; city_id: string; delivers_to_city: boolean };
+type Branch = { id: string; name: string; address: string; phone: string; delivers_to_city: boolean };
 
 export default function CheckoutScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { items, total, clearCart } = useCart();
-  const [cities, setCities] = useState<City[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
-  const [showCityPicker, setShowCityPicker] = useState(false);
+  const [userCity, setUserCity] = useState<string | null>(null);
+  const [deliveryTime, setDeliveryTime] = useState(30);
+  const [deliveryFee, setDeliveryFee] = useState(250);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -39,15 +36,75 @@ export default function CheckoutScreen() {
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) {
+      Alert.alert('Sign in required', 'Please sign in to place an order', [
+        { text: 'OK', onPress: () => router.replace('/auth/login') },
+      ]);
+      return;
+    }
+
     const fetchData = async () => {
       try {
-        const [citiesRes, branchesRes] = await Promise.all([
-          supabase.from('cities').select('*').eq('is_active', true).order('name', { ascending: true }),
-          supabase.from('branches').select('*').eq('is_active', true).order('name', { ascending: true }),
-        ]);
+        // Get user's default address
+        const { data: addresses } = await supabase
+          .from('addresses')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_default', true)
+          .limit(1);
 
-        if (citiesRes.data) setCities(citiesRes.data);
-        if (branchesRes.data) setBranches(branchesRes.data.map((b) => ({ ...b, delivers_to_city: false })));
+        if (!addresses || addresses.length === 0) {
+          Alert.alert('No address', 'Please add a delivery address first', [
+            { text: 'OK', onPress: () => router.replace('/address') },
+          ]);
+          setDataLoading(false);
+          return;
+        }
+
+        const userAddress = addresses[0];
+        setUserCity(userAddress.city);
+        setName(userAddress.line1 + (userAddress.line2 ? ', ' + userAddress.line2 : ''));
+        setAddress(userAddress.line1 + (userAddress.line2 ? '\n' + userAddress.line2 : '') + '\n' + userAddress.city);
+
+        // Get city delivery info
+        const { data: cityData } = await supabase
+          .from('cities')
+          .select('id, delivery_time_minutes, delivery_fee')
+          .eq('name', userAddress.city)
+          .single();
+
+        if (cityData) {
+          setDeliveryTime(cityData.delivery_time_minutes);
+          setDeliveryFee(cityData.delivery_fee);
+
+          // Fetch branches and their delivery zones
+          const { data: branchesData } = await supabase
+            .from('branches')
+            .select('*')
+            .eq('is_active', true)
+            .order('name', { ascending: true });
+
+          const { data: zonesData } = await supabase
+            .from('branch_delivery_zones')
+            .select('branch_id')
+            .eq('city_id', cityData.id);
+
+          const deliveringBranchIds = new Set(zonesData?.map((z) => z.branch_id) || []);
+
+          const branchesWithStatus = branchesData?.map((b) => ({
+            id: b.id,
+            name: b.name,
+            address: b.address,
+            phone: b.phone,
+            delivers_to_city: deliveringBranchIds.has(b.id),
+          })) || [];
+
+          setBranches(branchesWithStatus);
+
+          // Auto-select first available branch
+          const available = branchesWithStatus.find((b) => b.delivers_to_city);
+          if (available) setSelectedBranch(available.id);
+        }
       } catch (error) {
         console.error('Failed to fetch checkout data:', error);
       } finally {
@@ -56,37 +113,7 @@ export default function CheckoutScreen() {
     };
 
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedCity || branches.length === 0) return;
-
-    const fetchZones = async () => {
-      const { data } = await supabase
-        .from('branch_delivery_zones')
-        .select('branch_id')
-        .eq('city_id', selectedCity.id);
-
-      const deliveringBranchIds = new Set(data?.map((d) => d.branch_id) || []);
-
-      setBranches((prev) =>
-        prev.map((b) => ({
-          ...b,
-          delivers_to_city: deliveringBranchIds.has(b.id),
-        }))
-      );
-
-      if (selectedBranch && !deliveringBranchIds.has(selectedBranch)) {
-        const available = branches.find((b) => deliveringBranchIds.has(b.id));
-        setSelectedBranch(available?.id || null);
-      } else if (!selectedBranch) {
-        const available = branches.find((b) => deliveringBranchIds.has(b.id));
-        if (available) setSelectedBranch(available.id);
-      }
-    };
-
-    fetchZones();
-  }, [selectedCity]);
+  }, [user]);
 
   if (items.length === 0) {
     return (
@@ -106,14 +133,9 @@ export default function CheckoutScreen() {
     );
   }
 
-  const deliveryFee = selectedCity?.delivery_fee || 250;
   const grandTotal = total + deliveryFee;
 
   const handlePlaceOrder = async () => {
-    if (!selectedCity) {
-      Alert.alert('Error', 'Please select your city');
-      return;
-    }
     if (!selectedBranch) {
       Alert.alert('Error', 'No branch delivers to your area');
       return;
@@ -144,7 +166,7 @@ export default function CheckoutScreen() {
         .insert({
           user_id: user.id,
           branch: branch?.name || '',
-          city: selectedCity.name,
+          city: userCity,
           total: grandTotal,
           delivery_fee: deliveryFee,
           payment_method: paymentMethod,
@@ -213,59 +235,46 @@ export default function CheckoutScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Delivery City</Text>
-          <TouchableOpacity style={styles.cityPicker} onPress={() => setShowCityPicker(true)}>
+        {userCity && (
+          <View style={styles.cityInfo}>
             <Ionicons name="location" size={20} color={APP_COLORS.primary} />
-            <Text style={[styles.cityPickerText, !selectedCity && styles.cityPickerPlaceholder]}>
-              {selectedCity ? selectedCity.name : 'Select your city'}
-            </Text>
-            <Ionicons name="chevron-down" size={20} color={APP_COLORS.textSecondary} />
-          </TouchableOpacity>
-          {selectedCity && (
-            <View style={styles.deliveryInfo}>
-              <Ionicons name="time" size={16} color={APP_COLORS.textSecondary} />
-              <Text style={styles.deliveryInfoText}>
-                {selectedCity.delivery_time_minutes} min • Rs. {selectedCity.delivery_fee} delivery fee
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {selectedCity && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select Branch</Text>
-            {branches.map((b) => {
-              const isDisabled = !b.delivers_to_city;
-              const isSelected = selectedBranch === b.id;
-              return (
-                <TouchableOpacity
-                  key={b.id}
-                  style={[
-                    styles.branchCard,
-                    isSelected && styles.branchCardActive,
-                    isDisabled && styles.branchCardDisabled,
-                  ]}
-                  onPress={() => !isDisabled && setSelectedBranch(b.id)}
-                  disabled={isDisabled}
-                >
-                  <Ionicons
-                    name={isDisabled ? 'ban' : isSelected ? 'radio-button-on' : 'radio-button-off'}
-                    size={22}
-                    color={isDisabled ? APP_COLORS.textSecondary : APP_COLORS.primary}
-                  />
-                  <View style={styles.branchInfo}>
-                    <Text style={[styles.branchName, isDisabled && styles.branchNameDisabled]}>{b.name}</Text>
-                    <Text style={styles.branchAddress}>{b.address}</Text>
-                    {isDisabled && (
-                      <Text style={styles.noDeliveryText}>No delivery to {selectedCity.name}</Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+            <Text style={styles.cityInfoText}>Delivering to <Text style={styles.cityInfoName}>{userCity}</Text></Text>
+            <Text style={styles.deliveryInfoText}>{deliveryTime} min • Rs. {deliveryFee} delivery fee</Text>
           </View>
         )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Select Branch</Text>
+          {branches.map((b) => {
+            const isDisabled = !b.delivers_to_city;
+            const isSelected = selectedBranch === b.id;
+            return (
+              <TouchableOpacity
+                key={b.id}
+                style={[
+                  styles.branchCard,
+                  isSelected && styles.branchCardActive,
+                  isDisabled && styles.branchCardDisabled,
+                ]}
+                onPress={() => !isDisabled && setSelectedBranch(b.id)}
+                disabled={isDisabled}
+              >
+                <Ionicons
+                  name={isDisabled ? 'ban' : isSelected ? 'radio-button-on' : 'radio-button-off'}
+                  size={22}
+                  color={isDisabled ? APP_COLORS.textSecondary : APP_COLORS.primary}
+                />
+                <View style={styles.branchInfo}>
+                  <Text style={[styles.branchName, isDisabled && styles.branchNameDisabled]}>{b.name}</Text>
+                  <Text style={styles.branchAddress}>{b.address}</Text>
+                  {isDisabled && (
+                    <Text style={styles.noDeliveryText}>No delivery to {userCity}</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery Details</Text>
@@ -378,7 +387,7 @@ export default function CheckoutScreen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder} disabled={loading || !selectedCity || !selectedBranch}>
+        <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder} disabled={loading || !selectedBranch}>
           {loading ? (
             <ActivityIndicator color="#FFF" />
           ) : (
@@ -386,43 +395,6 @@ export default function CheckoutScreen() {
           )}
         </TouchableOpacity>
       </View>
-
-      <Modal visible={showCityPicker} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.cityPickerModal}>
-            <View style={styles.cityPickerHeader}>
-              <Text style={styles.cityPickerTitle}>Select City</Text>
-              <TouchableOpacity onPress={() => setShowCityPicker(false)}>
-                <Ionicons name="close" size={24} color={APP_COLORS.text} />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={cities}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.cityItem, selectedCity?.id === item.id && styles.cityItemSelected]}
-                  onPress={() => {
-                    setSelectedCity(item);
-                    setShowCityPicker(false);
-                  }}
-                >
-                  <Ionicons name="location" size={20} color={APP_COLORS.primary} />
-                  <Text style={[styles.cityName, selectedCity?.id === item.id && styles.cityNameSelected]}>
-                    {item.name}
-                  </Text>
-                  <Text style={styles.cityDeliveryInfo}>
-                    {item.delivery_time_minutes} min • Rs. {item.delivery_fee}
-                  </Text>
-                  {selectedCity?.id === item.id && (
-                    <Ionicons name="checkmark-circle" size={22} color={APP_COLORS.primary} />
-                  )}
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -433,13 +405,12 @@ const styles = StyleSheet.create({
   backButton: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
   scrollContent: { padding: 20, paddingBottom: 100 },
+  cityInfo: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: APP_COLORS.border, gap: 10 },
+  cityInfoText: { flex: 1, fontSize: 14, color: APP_COLORS.textSecondary },
+  cityInfoName: { fontWeight: '700', color: APP_COLORS.text },
+  deliveryInfoText: { fontSize: 13, color: APP_COLORS.textSecondary },
   section: { marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text, marginBottom: 12 },
-  cityPicker: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderWidth: 1, borderColor: APP_COLORS.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, gap: 10 },
-  cityPickerText: { flex: 1, fontSize: 16, color: APP_COLORS.text },
-  cityPickerPlaceholder: { color: APP_COLORS.textSecondary },
-  deliveryInfo: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingHorizontal: 4 },
-  deliveryInfoText: { fontSize: 13, color: APP_COLORS.textSecondary },
   branchCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: APP_COLORS.border, gap: 12 },
   branchCardActive: { borderColor: APP_COLORS.primary, backgroundColor: '#FFF5F5' },
   branchCardDisabled: { opacity: 0.5, backgroundColor: '#F9FAFB' },
@@ -471,13 +442,4 @@ const styles = StyleSheet.create({
   placeOrderText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: APP_COLORS.text, marginTop: 16 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  cityPickerModal: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '70%', paddingBottom: 24 },
-  cityPickerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: APP_COLORS.border },
-  cityPickerTitle: { fontSize: 18, fontWeight: '700', color: APP_COLORS.text },
-  cityItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: APP_COLORS.border, gap: 12 },
-  cityItemSelected: { backgroundColor: '#FFF5F5' },
-  cityName: { flex: 1, fontSize: 16, color: APP_COLORS.text },
-  cityNameSelected: { fontWeight: '600', color: APP_COLORS.primary },
-  cityDeliveryInfo: { fontSize: 12, color: APP_COLORS.textSecondary },
 });
