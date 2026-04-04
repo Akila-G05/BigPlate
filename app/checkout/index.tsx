@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,6 +14,7 @@ import { APP_COLORS } from '../../src/constants';
 import { useCart } from '../../src/context/CartContext';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
@@ -71,6 +71,7 @@ export default function CheckoutScreen() {
   const { user } = useAuth();
   const { items, total, clearCart } = useCart();
   const { colors } = useTheme();
+  const { showAlert } = useThemedAlert();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [userCity, setUserCity] = useState<string | null>(null);
@@ -86,7 +87,7 @@ export default function CheckoutScreen() {
 
   useEffect(() => {
     if (!user) {
-      Alert.alert('Sign in required', 'Please sign in to place an order', [
+      showAlert('Sign in required', 'Please sign in to place an order', [
         { text: 'OK', onPress: () => router.replace('/auth/login') },
       ]);
       return;
@@ -103,7 +104,7 @@ export default function CheckoutScreen() {
           .limit(1);
 
         if (!addresses || addresses.length === 0) {
-          Alert.alert('No address', 'Please add a delivery address first', [
+          showAlert('No address', 'Please add a delivery address first', [
             { text: 'OK', onPress: () => router.replace('/address') },
           ]);
           setDataLoading(false);
@@ -185,15 +186,15 @@ export default function CheckoutScreen() {
 
   const handlePlaceOrder = async () => {
     if (!selectedBranch) {
-      Alert.alert('Error', 'No branch delivers to your area');
+      showAlert('Error', 'No branch delivers to your area');
       return;
     }
     if (!phone.trim()) {
-      Alert.alert('Error', 'Please enter your phone number');
+      showAlert('Error', 'Please enter your phone number');
       return;
     }
     if (!user) {
-      Alert.alert('Error', 'Please sign in to place an order');
+      showAlert('Error', 'Please sign in to place an order');
       router.replace('/auth/login');
       return;
     }
@@ -208,7 +209,7 @@ export default function CheckoutScreen() {
         .limit(1);
 
       if (!addresses || addresses.length === 0) {
-        Alert.alert('Error', 'No delivery address found');
+        showAlert('Error', 'No delivery address found');
         setLoading(false);
         return;
       }
@@ -256,7 +257,7 @@ export default function CheckoutScreen() {
       clearCart();
       router.replace('/checkout/confirmation');
     } catch (error: any) {
-      Alert.alert('Order Failed', error.message || 'Could not place order');
+      showAlert('Order Failed', error.message || 'Could not place order');
     } finally {
       setLoading(false);
     }

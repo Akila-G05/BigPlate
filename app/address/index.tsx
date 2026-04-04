@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Modal,
   ActivityIndicator,
   FlatList,
@@ -16,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
@@ -158,6 +158,7 @@ export default function AddressScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { showAlert } = useThemedAlert();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(true);
@@ -242,7 +243,7 @@ export default function AddressScreen() {
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert('Delete Address', 'Are you sure you want to delete this address?', [
+    showAlert('Delete Address', 'Are you sure you want to delete this address?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -253,7 +254,7 @@ export default function AddressScreen() {
             if (error) throw error;
             setAddresses((prev) => prev.filter((a) => a.id !== id));
           } catch (error: any) {
-            Alert.alert('Error', error.message);
+            showAlert('Error', error.message);
           }
         },
       },
@@ -262,7 +263,7 @@ export default function AddressScreen() {
 
   const handleSave = async () => {
     if (!label.trim() || !line1.trim() || !selectedCity) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      showAlert('Error', 'Please fill in all required fields');
       return;
     }
 
@@ -291,7 +292,7 @@ export default function AddressScreen() {
       resetForm();
       fetchAddresses();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Could not save address');
+      showAlert('Error', error.message || 'Could not save address');
     } finally {
       setSaving(false);
     }
@@ -312,7 +313,7 @@ export default function AddressScreen() {
       if (error) throw error;
       fetchAddresses();
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      showAlert('Error', error.message);
     }
   };
 

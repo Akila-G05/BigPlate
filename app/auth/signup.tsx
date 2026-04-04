@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -16,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
@@ -59,6 +59,7 @@ export default function SignupScreen() {
   const router = useRouter();
   const { signUp } = useAuth();
   const { colors } = useTheme();
+  const { showAlert } = useThemedAlert();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -71,34 +72,34 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Please enter your name');
+      showAlert('Error', 'Please enter your name');
       return;
     }
     if (!email.trim() || !email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email');
+      showAlert('Error', 'Please enter a valid email');
       return;
     }
     if (!phone.trim()) {
-      Alert.alert('Error', 'Please enter your phone number');
+      showAlert('Error', 'Please enter your phone number');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      showAlert('Error', 'Password must be at least 6 characters');
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showAlert('Error', 'Passwords do not match');
       return;
     }
 
     setLoading(true);
     try {
       await signUp(name, email, phone, password);
-      Alert.alert('Success', 'Account created! Please sign in.', [
+      showAlert('Success', 'Account created! Please sign in.', [
         { text: 'OK', onPress: () => router.replace('/auth/login') },
       ]);
     } catch (error: any) {
-      Alert.alert('Signup Failed', error.message || 'Could not create account');
+      showAlert('Signup Failed', error.message || 'Could not create account');
     } finally {
       setLoading(false);
     }

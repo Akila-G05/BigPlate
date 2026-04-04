@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Linking, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,6 +7,7 @@ import * as Application from 'expo-application';
 import { APP_COLORS } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
@@ -47,6 +48,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { showAlert } = useThemedAlert();
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(false);
 
@@ -65,19 +67,19 @@ export default function SettingsScreen() {
   }, [settings]);
 
   const handleClearCache = () => {
-    Alert.alert('Clear Cache', 'This will clear all locally stored data including your cart. Continue?', [
+    showAlert('Clear Cache', 'This will clear all locally stored data including your cart. Continue?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Clear', style: 'destructive', onPress: async () => {
         const keys = await AsyncStorage.getAllKeys();
         await AsyncStorage.multiRemove(keys);
-        Alert.alert('Success', 'Cache cleared! Please sign in again.');
+        showAlert('Success', 'Cache cleared! Please sign in again.');
         router.replace('/(tabs)');
       }},
     ]);
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert('Delete Account', 'This action cannot be undone. All your data including orders, addresses, and favorites will be permanently deleted.', [
+    showAlert('Delete Account', 'This action cannot be undone. All your data including orders, addresses, and favorites will be permanently deleted.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         if (!user) return;
@@ -89,9 +91,9 @@ export default function SettingsScreen() {
           await supabase.from('users').delete().eq('id', user.id);
           await supabase.auth.admin.deleteUser(user.id);
           await AsyncStorage.clear();
-          Alert.alert('Account Deleted', 'Your account has been permanently deleted.', [{ text: 'OK', onPress: () => router.replace('/auth/login') }]);
+          showAlert('Account Deleted', 'Your account has been permanently deleted.', [{ text: 'OK', onPress: () => router.replace('/auth/login') }]);
         } catch (error: any) {
-          Alert.alert('Error', error.message || 'Could not delete account');
+          showAlert('Error', error.message || 'Could not delete account');
         } finally {
           setLoading(false);
         }
@@ -102,14 +104,14 @@ export default function SettingsScreen() {
   const handleContactSupport = () => { Linking.openURL('tel:+94770359400'); };
 
   const handleRateUs = () => {
-    Alert.alert('Rate Big Plate', 'Thank you for your support! Please rate us on the app store.', [
+    showAlert('Rate Big Plate', 'Thank you for your support! Please rate us on the app store.', [
       { text: 'Maybe Later', style: 'cancel' },
       { text: 'Rate Now', onPress: () => Linking.openURL('https://play.google.com/store/apps') },
     ]);
   };
 
   const handleHelpCenter = () => {
-    Alert.alert('Help Center', 'Need help? Contact us:\n\n📞 +94 77 035 9400\n📧 support@bigplate.lk\n🕐 Mon-Sun: 10AM - 11PM', [{ text: 'OK' }]);
+    showAlert('Help Center', 'Need help? Contact us:\n\n📞 +94 77 035 9400\n📧 support@bigplate.lk\n🕐 Mon-Sun: 10AM - 11PM', [{ text: 'OK' }]);
   };
 
   const { colors } = useTheme();
