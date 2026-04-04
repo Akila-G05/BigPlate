@@ -8,9 +8,9 @@ import { useAuth } from '../../src/context/AuthContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 
 const NOTIF_COLORS: Record<string, { icon: string; bg: string; border: string; dot: string }> = {
-  order: { icon: '#3B82F6', bg: '#DBEAFE', border: '#93C5FD', dot: '#3B82F6' },
-  promo: { icon: '#F59E0B', bg: '#FEF3C7', border: '#FCD34D', dot: '#F59E0B' },
-  system: { icon: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB', dot: '#6B7280' },
+  order: { icon: '#3B82F6', bg: '#EFF6FF', border: '#BFDBFE', dot: '#3B82F6' },
+  promo: { icon: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
+  system: { icon: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB', dot: '#6B7280' },
 };
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
@@ -138,7 +138,8 @@ export default function NotificationsScreen() {
             <TouchableOpacity
               style={[
                 styles.notifCard,
-                isUnread && [styles.notifCardUnread, { borderColor: nc.border, backgroundColor: nc.bg + '40' }],
+                { backgroundColor: nc.bg, borderColor: nc.border },
+                isUnread && { borderWidth: 2 },
               ]}
               onPress={() => markAsRead(item.id)}
             >
