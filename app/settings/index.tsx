@@ -98,9 +98,12 @@ export default function SettingsScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Clear', style: 'destructive', onPress: async () => {
         const keys = await AsyncStorage.getAllKeys();
-        await AsyncStorage.multiRemove(keys);
-        showAlert('Success', 'Cache cleared! Please sign in again.');
-        router.replace('/(tabs)');
+        // Keep Supabase auth session keys so user stays logged in
+        const keysToRemove = keys.filter((key) => 
+          !key.startsWith('sb-') && !key.includes('supabase')
+        );
+        await AsyncStorage.multiRemove(keysToRemove);
+        showAlert('Success', 'Cache cleared successfully!');
       }},
     ]);
   };
