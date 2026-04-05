@@ -164,8 +164,13 @@ export default function ReviewScreen() {
         const item = orderItems.find((i) => i.id === itemId);
         if (!item) continue;
 
+        // Fetch user name before submitting
+        const { data: profile } = await supabase.from('users').select('name').eq('id', user!.id).single();
+        const userName = profile?.name || 'Anonymous';
+
         const reviewData = {
           user_id: user!.id,
+          user_name: userName,
           order_id: orderId,
           menu_item_id: item.menu_item_id,
           rating: ratings[itemId],

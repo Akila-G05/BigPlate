@@ -30,7 +30,7 @@ type Review = {
   rating: number;
   comment: string;
   created_at: string;
-  users: { name: string } | null;
+  user_name: string | null;
 };
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
@@ -152,7 +152,7 @@ export default function ItemDetailScreen() {
       try {
         const { data, error } = await supabase
           .from('reviews')
-          .select('id, rating, comment, created_at, users(name)')
+          .select('id, rating, comment, created_at, user_name')
           .eq('menu_item_id', item.id)
           .order('created_at', { ascending: false })
           .limit(10);
@@ -311,7 +311,7 @@ export default function ItemDetailScreen() {
               reviews.map((review) => (
                 <View key={review.id} style={styles.reviewCard}>
                   <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewerName}>{review.users?.name || 'Anonymous'}</Text>
+                    <Text style={styles.reviewerName}>{review.user_name || 'Anonymous'}</Text>
                     <Text style={styles.reviewDate}>
                       {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </Text>
