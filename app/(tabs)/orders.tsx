@@ -99,6 +99,7 @@ export default function OrdersScreen() {
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [deliveryTimes, setDeliveryTimes] = useState<Record<string, number>>({});
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const styles = createStyles(colors);
 
   const fetchData = async () => {
@@ -270,6 +271,7 @@ export default function OrdersScreen() {
                       {order.order_statuses?.name === 'pending' && (
                         <TouchableOpacity
                           style={styles.deleteButton}
+                          disabled={deletingOrderId === order.id}
                           onPress={() => {
                             showAlert('Delete Order', 'Are you sure you want to cancel this order? This cannot be undone.', [
                               { text: 'Cancel', style: 'cancel' },
@@ -277,6 +279,7 @@ export default function OrdersScreen() {
                                 text: 'Delete',
                                 style: 'destructive',
                                 onPress: async () => {
+                                  setDeletingOrderId(order.id);
                                   try {
                                     await supabase.from('order_items').delete().eq('order_id', order.id);
                                     await supabase.from('orders').delete().eq('id', order.id);
@@ -285,14 +288,22 @@ export default function OrdersScreen() {
                                     showAlert('Success', 'Order cancelled successfully');
                                   } catch (error: any) {
                                     showAlert('Error', error.message || 'Failed to cancel order');
+                                  } finally {
+                                    setDeletingOrderId(null);
                                   }
                                 },
                               },
                             ]);
                           }}
                         >
-                          <Ionicons name="trash" size={18} color="#EF4444" />
-                          <Text style={styles.deleteButtonText}>Cancel Order</Text>
+                          {deletingOrderId === order.id ? (
+                            <ActivityIndicator size="small" color="#EF4444" />
+                          ) : (
+                            <>
+                              <Ionicons name="trash" size={18} color="#EF4444" />
+                              <Text style={styles.deleteButtonText}>Cancel Order</Text>
+                            </>
+                          )}
                         </TouchableOpacity>
                       )}
                     </View>
