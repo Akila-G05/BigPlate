@@ -370,13 +370,39 @@ export default function CheckoutScreen() {
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
       if (itemsError) throw itemsError;
 
-      const { error: notifError } = await supabase.from('notifications').insert({
+      // Create in-app notification (for the bell icon)
+      await supabase.from('notifications').insert({
         user_id: user.id,
         title: 'Order Placed! 🎉',
         message: `Your order #${order.id.slice(0, 8)} has been placed successfully.`,
         type: 'order',
       });
-      if (notifError) console.error('Failed to create notification:', notifError);
+
+      // Send Push/Email Notification directly from the app
+      try {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('email, expo_push_token, push_notifications, email_notifications')
+          .eq('id', user.id)
+          .single();
+
+        if (userData && (userData.push_notifications || userData.email_notifications)) {
+          await supabase.functions.invoke('bright-service', {
+            body: {
+              pushToken: userData.expo_push_token,
+              userEmail: userData.email,
+              sendPush: userData.push_notifications,
+              sendEmail: userData.email_notifications,
+              title: 'Order Placed! 🎉',
+              body: `Your order #${order.id.slice(0, 8)} has been placed successfully.`,
+              data: { type: 'order', orderId: order.id },
+            },
+          });
+        }
+      } catch (notifError) {
+        console.error('Failed to send push/email notification:', notifError);
+        // Don't stop the order if notification fails
+      }
 
       clearCart();
       router.replace({ pathname: '/checkout/confirmation', params: { orderId: order.id } });
