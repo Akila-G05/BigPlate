@@ -89,24 +89,27 @@ export default function HomeScreen() {
   const [trendingItems, setTrendingItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState({ totalItems: 0, avgRating: 0, totalReviews: 0 });
 
   const fetchData = async () => {
     try {
-      const [catsRes, trendingRes] = await Promise.all([
-        supabase
-          .from("categories")
-          .select("*")
-          .order("sort_order", { ascending: true }),
-        supabase
-          .from("menu_items")
-          .select("*")
-          .eq("is_trending", true)
-          .eq("is_available", true)
-          .limit(4),
+      const [catsRes, trendingRes, itemsCountRes, reviewsRes] = await Promise.all([
+        supabase.from("categories").select("*").order("sort_order", { ascending: true }),
+        supabase.from("menu_items").select("*").eq("is_trending", true).eq("is_available", true).limit(4),
+        supabase.from("menu_items").select("id", { count: "exact", head: true }).eq("is_available", true),
+        supabase.from("reviews").select("rating"),
       ]);
 
       if (catsRes.data) setCategories(catsRes.data);
       if (trendingRes.data) setTrendingItems(trendingRes.data);
+
+      // Calculate real stats
+      const totalItems = itemsCountRes.count || 0;
+      const reviews = reviewsRes.data || [];
+      const totalReviews = reviews.length;
+      const avgRating = totalReviews > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1) : "0.0";
+
+      setStats({ totalItems, avgRating: parseFloat(avgRating), totalReviews });
     } catch (error) {
       console.error("Failed to fetch home data:", error);
     } finally {
@@ -290,12 +293,12 @@ export default function HomeScreen() {
           </View>
           <View style={styles.infoCard}>
             <Ionicons name="star" size={24} color={APP_COLORS.warning} />
-            <Text style={styles.infoValue}>4.9</Text>
-            <Text style={styles.infoLabel}>37.1K+ Reviews</Text>
+            <Text style={styles.infoValue}>{stats.avgRating}</Text>
+            <Text style={styles.infoLabel}>{stats.totalReviews} Reviews</Text>
           </View>
           <View style={styles.infoCard}>
             <Ionicons name="fast-food" size={24} color={APP_COLORS.success} />
-            <Text style={styles.infoValue}>250+</Text>
+            <Text style={styles.infoValue}>{stats.totalItems}</Text>
             <Text style={styles.infoLabel}>Menu Items</Text>
           </View>
         </View>
