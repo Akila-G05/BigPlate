@@ -59,18 +59,14 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-reset-code', {
+      const { data, error } = await supabase.functions.invoke('smooth-worker', {
         body: { email: email.trim() },
       });
 
       if (error) throw error;
+      // Navigate to code entry screen
       setStep(2);
-      // For testing: show the code in alert
-      if (data?.test_code) {
-        showAlert('Code Sent', `Your code is: ${data.test_code}`);
-      } else {
-        showAlert('Code Sent', 'Check your email for the 6-digit code.');
-      }
+      showAlert('Code Sent', `A 6-digit verification code has been sent to ${email.trim()}. Please check your inbox.`);
     } catch (error: any) {
       showAlert('Error', error.message || 'Failed to send code');
     } finally {
