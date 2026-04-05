@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS, BRANCHES } from '../../src/constants';
@@ -102,6 +102,7 @@ export default function ProfileScreen() {
   const { showAlert } = useThemedAlert();
   const { unreadCount } = useNotifications();
   const [userName, setUserName] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const styles = createStyles(colors);
 
   useEffect(() => {
@@ -118,11 +119,13 @@ export default function ProfileScreen() {
   }, [user]);
 
   const handleSignOut = async () => {
+    setSigningOut(true);
     try {
       await signOut();
       router.replace('/(tabs)');
     } catch (error: any) {
       showAlert('Error', error.message);
+      setSigningOut(false);
     }
   };
 
@@ -219,9 +222,15 @@ export default function ProfileScreen() {
         ))}
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
-        <Ionicons name="log-out" size={20} color={APP_COLORS.primary} />
-        <Text style={styles.logoutText}>Sign Out</Text>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut} disabled={signingOut}>
+        {signingOut ? (
+          <ActivityIndicator color={APP_COLORS.primary} />
+        ) : (
+          <>
+            <Ionicons name="log-out" size={20} color={APP_COLORS.primary} />
+            <Text style={styles.logoutText}>Sign Out</Text>
+          </>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
