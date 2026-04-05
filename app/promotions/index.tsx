@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useCart } from '../../src/context/CartContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 import { FoodImage } from '../../src/components/FoodImage';
@@ -15,6 +16,8 @@ type Promo = {
   description: string;
   code: string;
   discount: number;
+  type: string;
+  combo_price: number;
   image: string;
   valid_until: string;
   min_order: number;
@@ -59,9 +62,26 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 export default function PromotionsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { addToCart } = useCart();
   const [promos, setPromos] = useState<Promo[]>([]);
   const [loading, setLoading] = useState(true);
   const styles = createStyles(colors);
+
+  const handlePromoAction = async (promo: Promo) => {
+    if (promo.type === 'combo') {
+      // Add all combo items to cart and go to checkout
+      const items = promo.promo_items?.map((pi) => pi.menu_items).filter(Boolean) || [];
+      if (items.length === 0) return;
+
+      items.forEach((item) => addToCart(item));
+      Alert.alert('Combo Added!', `${items.length} items added to your cart.`, [
+        { text: 'OK', onPress: () => router.push('/checkout') },
+      ]);
+    } else {
+      // For promo codes, go to menu or checkout
+      router.push('/(tabs)/menu');
+    }
+  };
 
   useEffect(() => {
     const fetchPromos = async () => {
@@ -128,13 +148,28 @@ export default function PromotionsScreen() {
                 <Text style={styles.promoDesc}>{promo.description}</Text>
 
                 <View style={styles.promoFooter}>
-                  <View style={styles.codeContainer}>
-                    <Text style={styles.codeText}>{promo.code}</Text>
-                  </View>
-                  <TouchableOpacity style={styles.applyButton} onPress={() => router.push('/(tabs)/menu')}>
-                    <Text style={styles.applyText}>Order Now</Text>
+                  {promo.type !== 'free_delivery' && (
+                    <View style={styles.codeContainer}>
+                      <Text style={styles.codeText}>{promo.code}</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity style={styles.applyButton} onPress={() => handlePromoAction(promo)}>
+                    <Text style={styles.applyText}>
+                      {promo.type === 'combo' ? `Add Combo - Rs. ${promo.combo_price?.toLocaleString()}` : promo.type === 'free_delivery' ? 'Order Now' : 'Apply Code'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
+
+                {promo.type === 'combo' && (
+                  <View style={styles.allItemsBadge}>
+                    <Text style={styles.allItemsText}>🍱 Combo Deal</Text>
+                  </View>
+                )}
+                {promo.type === 'free_delivery' && (
+                  <View style={styles.allItemsBadge}>
+                    <Text style={styles.allItemsText}>🚚 Free Delivery</Text>
+                  </View>
+                )}
 
                 {appliesToAll ? (
                   <View style={styles.allItemsBadge}>

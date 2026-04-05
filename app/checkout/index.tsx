@@ -20,7 +20,7 @@ import { supabase } from '../../src/lib/supabaseClient';
 import { validatePhone } from '../../src/utils/validation';
 
 type Branch = { id: string; name: string; address: string; phone: string; delivers_to_city: boolean };
-type Promo = { id: string; code: string; discount: number; min_order: number; title: string; eligibleItemIds: string[] };
+type Promo = { id: string; code: string; discount: number; min_order: number; title: string; eligibleItemIds: string[]; type: string; combo_price: number; freeDelivery: boolean };
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
@@ -90,6 +90,7 @@ export default function CheckoutScreen() {
   const [userCity, setUserCity] = useState<string | null>(null);
   const [deliveryTime, setDeliveryTime] = useState(30);
   const [deliveryFee, setDeliveryFee] = useState(250);
+  const [originalDeliveryFee, setOriginalDeliveryFee] = useState(250);
   const [phone, setPhone] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [instructions, setInstructions] = useState('');
@@ -155,6 +156,7 @@ export default function CheckoutScreen() {
         if (cityData) {
           setDeliveryTime(cityData.delivery_time_minutes);
           setDeliveryFee(cityData.delivery_fee);
+          setOriginalDeliveryFee(cityData.delivery_fee);
 
           const { data: branchesData } = await supabase
             .from('branches')
@@ -222,33 +224,40 @@ export default function CheckoutScreen() {
         return;
       }
 
-      // Check if promo has specific items
       const eligibleItemIds = promo.promo_items?.map((pi: any) => pi.menu_item_id) || [];
-
-      if (eligibleItemIds.length > 0) {
-        // Check if any cart item is eligible
-        const cartItemIds = items.map((i) => i.menu_item.id);
-        const hasEligibleItem = cartItemIds.some((id) => eligibleItemIds.includes(id));
-
-        if (!hasEligibleItem) {
-          setPromoError('This promo code doesn\'t apply to items in your cart');
-          setPromoLoading(false);
-          return;
-        }
-      }
-
-      // Calculate discount on eligible items only
       let discountAmount = 0;
-      if (eligibleItemIds.length > 0) {
+      let freeDelivery = false;
+
+      if (promo.type === 'free_delivery') {
+        freeDelivery = true;
+        setDeliveryFee(0);
+        discountAmount = 0;
+      } else if (promo.type === 'item_discount') {
+        // Reset delivery fee if it was previously free
+        setDeliveryFee(originalDeliveryFee);
+
         // Only discount eligible items
-        items.forEach((item) => {
-          if (eligibleItemIds.includes(item.menu_item.id)) {
-            discountAmount += item.menu_item.price * item.quantity * (promo.discount / 100);
+        if (eligibleItemIds.length > 0) {
+          const cartItemIds = items.map((i) => i.menu_item.id);
+          const hasEligibleItem = cartItemIds.some((id) => eligibleItemIds.includes(id));
+          if (!hasEligibleItem) {
+            setPromoError('This promo code doesn\'t apply to items in your cart');
+            setPromoLoading(false);
+            return;
           }
-        });
-      } else {
-        // Discount applies to entire order
-        discountAmount = total * (promo.discount / 100);
+          items.forEach((item) => {
+            if (eligibleItemIds.includes(item.menu_item.id)) {
+              discountAmount += item.menu_item.price * item.quantity * (promo.discount / 100);
+            }
+          });
+        } else {
+          // Discount applies to entire order
+          discountAmount = total * (promo.discount / 100);
+        }
+      } else if (promo.type === 'combo') {
+        setPromoError('Combo deals must be added from the Promotions screen.');
+        setPromoLoading(false);
+        return;
       }
 
       setAppliedPromo({
@@ -258,6 +267,9 @@ export default function CheckoutScreen() {
         min_order: promo.min_order,
         title: promo.title,
         eligibleItemIds,
+        type: promo.type,
+        combo_price: promo.combo_price,
+        freeDelivery,
       });
       setDiscount(Math.round(discountAmount));
       setPromoCode('');
@@ -271,6 +283,7 @@ export default function CheckoutScreen() {
   const removePromo = () => {
     setAppliedPromo(null);
     setDiscount(0);
+    setDeliveryFee(originalDeliveryFee);
     setPromoError('');
     setPromoCode('');
   };
@@ -558,8 +571,16 @@ export default function CheckoutScreen() {
           )}
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Delivery Fee</Text>
-            <Text style={styles.summaryValue}>Rs. {deliveryFee.toLocaleString()}</Text>
+            <Text style={[styles.summaryValue, appliedPromo?.freeDelivery && { textDecorationLine: 'line-through', color: colors.textSecondary }]}>
+              Rs. {originalDeliveryFee.toLocaleString()}
+            </Text>
           </View>
+          {appliedPromo?.freeDelivery && (
+            <View style={styles.discountRow}>
+              <Text style={styles.discountLabel}>Free Delivery</Text>
+              <Text style={styles.discountValue}>- Rs. {originalDeliveryFee.toLocaleString()}</Text>
+            </View>
+          )}
           <View style={[styles.summaryRow, styles.grandTotalRow]}>
             <Text style={styles.grandTotalLabel}>Total</Text>
             <Text style={styles.grandTotalValue}>Rs. {grandTotal.toLocaleString()}</Text>
