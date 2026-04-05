@@ -25,6 +25,14 @@ type MenuItem = {
   tags: string[];
 };
 
+type Review = {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  users: { name: string } | null;
+};
+
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.background },
@@ -64,6 +72,19 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   tagChipText: { fontSize: 13, color: c.textSecondary, fontWeight: '500' },
   newBadgeInline: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: APP_COLORS.success, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, alignSelf: 'flex-start', marginTop: 16 },
   newTextInline: { color: '#FFF', fontSize: 13, fontWeight: '600' },
+  reviewsSection: { marginTop: 24 },
+  reviewsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  avgRating: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  avgRatingValue: { fontSize: 20, fontWeight: '800', color: c.text },
+  avgRatingCount: { fontSize: 13, color: c.textSecondary },
+  reviewCard: { backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: c.border },
+  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  reviewerName: { fontSize: 14, fontWeight: '600', color: c.text },
+  reviewDate: { fontSize: 12, color: c.textSecondary },
+  reviewStars: { flexDirection: 'row', gap: 2, marginBottom: 6 },
+  reviewComment: { fontSize: 14, color: c.text, lineHeight: 20 },
+  noReviews: { alignItems: 'center', paddingVertical: 24 },
+  noReviewsText: { fontSize: 14, color: c.textSecondary, marginTop: 8 },
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -100,6 +121,8 @@ export default function ItemDetailScreen() {
   const [item, setItem] = useState<MenuItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [avgRating, setAvgRating] = useState(0);
   const styles = createStyles(colors);
 
   useEffect(() => {
@@ -122,6 +145,32 @@ export default function ItemDetailScreen() {
 
     fetchItem();
   }, [params.id]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!item) return;
+      try {
+        const { data, error } = await supabase
+          .from('reviews')
+          .select('id, rating, comment, created_at, users(name)')
+          .eq('menu_item_id', item.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) throw error;
+        setReviews(data || []);
+
+        if (data && data.length > 0) {
+          const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+          setAvgRating(Math.round(avg * 10) / 10);
+        }
+      } catch (error) {
+        console.error('Failed to fetch reviews:', error);
+      }
+    };
+
+    fetchReviews();
+  }, [item]);
 
   useEffect(() => {
     const checkFavorite = async () => {
@@ -245,6 +294,48 @@ export default function ItemDetailScreen() {
               </View>
             </>
           )}
+
+          <View style={styles.reviewsSection}>
+            <View style={styles.reviewsHeader}>
+              <Text style={styles.sectionLabel}>Reviews</Text>
+              {reviews.length > 0 && (
+                <View style={styles.avgRating}>
+                  <Ionicons name="star" size={18} color="#F59E0B" />
+                  <Text style={styles.avgRatingValue}>{avgRating}</Text>
+                  <Text style={styles.avgRatingCount}>({reviews.length})</Text>
+                </View>
+              )}
+            </View>
+
+            {reviews.length > 0 ? (
+              reviews.map((review) => (
+                <View key={review.id} style={styles.reviewCard}>
+                  <View style={styles.reviewHeader}>
+                    <Text style={styles.reviewerName}>{review.users?.name || 'Anonymous'}</Text>
+                    <Text style={styles.reviewDate}>
+                      {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </Text>
+                  </View>
+                  <View style={styles.reviewStars}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Ionicons
+                        key={star}
+                        name={star <= review.rating ? 'star' : 'star-outline'}
+                        size={14}
+                        color={star <= review.rating ? '#F59E0B' : '#D1D5DB'}
+                      />
+                    ))}
+                  </View>
+                  {review.comment && <Text style={styles.reviewComment}>{review.comment}</Text>}
+                </View>
+              ))
+            ) : (
+              <View style={styles.noReviews}>
+                <Ionicons name="chatbubble-ellipses-outline" size={32} color={colors.textSecondary} />
+                <Text style={styles.noReviewsText}>No reviews yet</Text>
+              </View>
+            )}
+          </View>
 
           {item.is_new && (
             <View style={styles.newBadgeInline}>

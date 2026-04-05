@@ -53,7 +53,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   commentInput: { backgroundColor: c.input, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: c.text, minHeight: 80, textAlignVertical: 'top', marginBottom: 12 },
   submitButton: { backgroundColor: APP_COLORS.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   submitButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  existingReview: { backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border },
+  existingReview: { backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', overflow: 'hidden' },
+  existingReviewOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: c.card, opacity: 0.8 },
+  existingReviewContent: { position: 'relative', zIndex: 1 },
   existingReviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   existingReviewBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   existingReviewBadgeText: { fontSize: 11, fontWeight: '600', color: '#92400E' },
@@ -275,32 +277,35 @@ export default function ReviewScreen() {
 
                   {existingReview && (
                     <View style={styles.existingReview}>
-                      <View style={styles.existingReviewHeader}>
-                        <View style={styles.existingReviewBadge}>
-                          <Ionicons name="time" size={12} color="#92400E" />
-                          <Text style={styles.existingReviewBadgeText}>Previous Review</Text>
+                      <View style={styles.existingReviewOverlay} />
+                      <View style={styles.existingReviewContent}>
+                        <View style={styles.existingReviewHeader}>
+                          <View style={styles.existingReviewBadge}>
+                            <Ionicons name="time" size={12} color="#92400E" />
+                            <Text style={styles.existingReviewBadgeText}>Previous Review</Text>
+                          </View>
                         </View>
-                      </View>
-                      <View style={styles.existingReviewStars}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Ionicons
-                            key={star}
-                            name={star <= existingReview.rating ? 'star' : 'star-outline'}
-                            size={18}
-                            color={star <= existingReview.rating ? '#F59E0B' : '#D1D5DB'}
-                          />
-                        ))}
-                      </View>
-                      {existingReview.comment && (
-                        <Text style={styles.existingReviewComment}>"{existingReview.comment}"</Text>
-                      )}
-                      <Text style={styles.existingReviewDate}>
-                        {new Date(existingReview.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </Text>
-                      <View style={styles.editDivider} />
-                      <View style={styles.editLabel}>
-                        <Ionicons name="pencil" size={14} color={APP_COLORS.primary} />
-                        <Text style={styles.editLabelText}>Editing your review</Text>
+                        <View style={styles.existingReviewStars}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Ionicons
+                              key={star}
+                              name={star <= existingReview.rating ? 'star' : 'star-outline'}
+                              size={18}
+                              color={star <= existingReview.rating ? '#F59E0B' : '#D1D5DB'}
+                            />
+                          ))}
+                        </View>
+                        {existingReview.comment && (
+                          <Text style={styles.existingReviewComment}>"{existingReview.comment}"</Text>
+                        )}
+                        <Text style={styles.existingReviewDate}>
+                          {new Date(existingReview.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </Text>
+                        <View style={styles.editDivider} />
+                        <View style={styles.editLabel}>
+                          <Ionicons name="pencil" size={14} color={APP_COLORS.primary} />
+                          <Text style={styles.editLabelText}>Editing your review</Text>
+                        </View>
                       </View>
                     </View>
                   )}
