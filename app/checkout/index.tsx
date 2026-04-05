@@ -17,6 +17,7 @@ import { useTheme } from '../../src/context/ThemeContext';
 import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
+import { validatePhone } from '../../src/utils/validation';
 
 type Branch = { id: string; name: string; address: string; phone: string; delivers_to_city: boolean };
 type Promo = { id: string; code: string; discount: number; min_order: number; title: string; eligibleItemIds: string[] };
@@ -300,8 +301,8 @@ export default function CheckoutScreen() {
       showAlert('Error', 'No branch delivers to your area');
       return;
     }
-    if (!phone.trim()) {
-      showAlert('Error', 'Please enter your phone number');
+    if (!validatePhone(phone)) {
+      showAlert('Error', 'Please enter a valid phone number (e.g., 0771234567 or +94771234567)');
       return;
     }
     if (!user) {

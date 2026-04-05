@@ -17,6 +17,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
+import { validateEmail, validatePhone, validatePassword, isNotEmpty } from '../../src/utils/validation';
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
@@ -71,19 +72,19 @@ export default function SignupScreen() {
   const styles = createStyles(colors);
 
   const handleSignup = async () => {
-    if (!name.trim()) {
-      showAlert('Error', 'Please enter your name');
+    if (!isNotEmpty(name)) {
+      showAlert('Error', 'Please enter your full name');
       return;
     }
-    if (!email.trim() || !email.includes('@')) {
-      showAlert('Error', 'Please enter a valid email');
+    if (!validateEmail(email)) {
+      showAlert('Error', 'Please enter a valid email address (e.g., user@example.com)');
       return;
     }
-    if (!phone.trim()) {
-      showAlert('Error', 'Please enter your phone number');
+    if (!validatePhone(phone)) {
+      showAlert('Error', 'Please enter a valid phone number (e.g., 0771234567 or +94771234567)');
       return;
     }
-    if (password.length < 6) {
+    if (!validatePassword(password)) {
       showAlert('Error', 'Password must be at least 6 characters');
       return;
     }

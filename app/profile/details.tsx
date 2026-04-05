@@ -17,6 +17,7 @@ import { useTheme } from "../../src/context/ThemeContext";
 import { useThemedAlert } from "../../src/context/ThemedAlertContext";
 import type { ThemeColors } from "../../src/context/ThemeContext";
 import { supabase } from "../../src/lib/supabaseClient";
+import { validatePhone, isNotEmpty } from "../../src/utils/validation";
 
 const createStyles = (c: ThemeColors) =>
   StyleSheet.create({
@@ -129,12 +130,12 @@ export default function ProfileDetailsScreen() {
   }, [user]);
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      showAlert("Error", "Please enter your name");
+    if (!isNotEmpty(name)) {
+      showAlert("Error", "Please enter your full name");
       return;
     }
-    if (!phone.trim()) {
-      showAlert("Error", "Please enter your phone number");
+    if (!validatePhone(phone)) {
+      showAlert("Error", "Please enter a valid phone number (e.g., 0771234567 or +94771234567)");
       return;
     }
 

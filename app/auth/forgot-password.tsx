@@ -17,6 +17,7 @@ import { useTheme } from '../../src/context/ThemeContext';
 import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
+import { validateEmail } from '../../src/utils/validation';
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
