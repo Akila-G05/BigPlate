@@ -115,6 +115,17 @@ export default function CheckoutScreen() {
 
     const fetchData = async () => {
       try {
+        // Fetch user profile for phone number
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('phone')
+          .eq('id', user.id)
+          .single();
+
+        if (userProfile?.phone) {
+          setPhone(userProfile.phone);
+        }
+
         const { data: addresses } = await supabase
           .from('addresses')
           .select('*')
