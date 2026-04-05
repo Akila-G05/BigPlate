@@ -123,6 +123,7 @@ export default function ItemDetailScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState(0);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const styles = createStyles(colors);
 
   useEffect(() => {
@@ -149,6 +150,7 @@ export default function ItemDetailScreen() {
   useEffect(() => {
     const fetchReviews = async () => {
       if (!params.id) return;
+      setReviewsLoading(true);
       try {
         const { data, error } = await supabase
           .from('reviews')
@@ -166,6 +168,8 @@ export default function ItemDetailScreen() {
         }
       } catch (error) {
         console.error('Failed to fetch reviews:', error);
+      } finally {
+        setReviewsLoading(false);
       }
     };
 
@@ -305,7 +309,9 @@ export default function ItemDetailScreen() {
                   <Text style={styles.avgRatingCount}>({reviews.length})</Text>
                 </View>
               ) : (
-                <ActivityIndicator size="small" color={colors.textSecondary} />
+                reviewsLoading && (
+                   <ActivityIndicator size="small" color={colors.textSecondary} />
+                )
               )}
             </View>
 
@@ -331,7 +337,7 @@ export default function ItemDetailScreen() {
                   {review.comment && <Text style={styles.reviewComment}>{review.comment}</Text>}
                 </View>
               ))
-            ) : (
+            ) : !reviewsLoading && (
               <View style={styles.noReviews}>
                 <Ionicons name="chatbubble-ellipses-outline" size={32} color={colors.textSecondary} />
                 <Text style={styles.noReviewsText}>No reviews yet</Text>
