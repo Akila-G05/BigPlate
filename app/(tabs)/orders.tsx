@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
@@ -67,6 +68,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   detailTotalValue: { fontSize: 18, fontWeight: '800', color: APP_COLORS.primary },
   callButton: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: APP_COLORS.success, borderRadius: 12, paddingVertical: 12, gap: 8, marginTop: 8 },
   callButtonText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
+  deleteButton: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEF2F2', borderRadius: 12, paddingVertical: 12, gap: 8, marginTop: 8, borderWidth: 1, borderColor: '#FECACA' },
+  deleteButtonText: { color: '#EF4444', fontSize: 15, fontWeight: '600' },
   orderCard: { backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: c.border },
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   orderId: { fontSize: 16, fontWeight: '700', color: c.text },
@@ -89,6 +92,7 @@ export default function OrdersScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { showAlert } = useThemedAlert();
   const [statuses, setStatuses] = useState<OrderStatus[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -263,6 +267,34 @@ export default function OrdersScreen() {
                         <Ionicons name="call" size={18} color="#FFF" />
                         <Text style={styles.callButtonText}>Call Restaurant</Text>
                       </TouchableOpacity>
+                      {order.order_statuses?.name === 'pending' && (
+                        <TouchableOpacity
+                          style={styles.deleteButton}
+                          onPress={() => {
+                            showAlert('Delete Order', 'Are you sure you want to cancel this order? This cannot be undone.', [
+                              { text: 'Cancel', style: 'cancel' },
+                              {
+                                text: 'Delete',
+                                style: 'destructive',
+                                onPress: async () => {
+                                  try {
+                                    await supabase.from('order_items').delete().eq('order_id', order.id);
+                                    await supabase.from('orders').delete().eq('id', order.id);
+                                    setOrders((prev) => prev.filter((o) => o.id !== order.id));
+                                    setSelectedOrder(null);
+                                    showAlert('Success', 'Order cancelled successfully');
+                                  } catch (error: any) {
+                                    showAlert('Error', error.message || 'Failed to cancel order');
+                                  }
+                                },
+                              },
+                            ]);
+                          }}
+                        >
+                          <Ionicons name="trash" size={18} color="#EF4444" />
+                          <Text style={styles.deleteButtonText}>Cancel Order</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   )}
                 </View>
