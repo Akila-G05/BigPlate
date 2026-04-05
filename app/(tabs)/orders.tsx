@@ -290,9 +290,9 @@ export default function OrdersScreen() {
                 </Text>
                 <View style={styles.orderFooter}>
                   <Text style={styles.orderTotal}>Rs. {order.total.toLocaleString()}</Text>
-                  <TouchableOpacity style={styles.reorderButton}>
-                    <Ionicons name="refresh" size={16} color={APP_COLORS.primary} />
-                    <Text style={styles.reorderText}>Reorder</Text>
+                  <TouchableOpacity style={styles.reorderButton} onPress={() => router.push({ pathname: '/review/[orderId]', params: { orderId: order.id } })}>
+                    <Ionicons name="star" size={16} color={APP_COLORS.primary} />
+                    <Text style={styles.reorderText}>Review</Text>
                   </TouchableOpacity>
                 </View>
               </View>
