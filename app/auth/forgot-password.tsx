@@ -112,7 +112,16 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      // Call Edge Function to update password securely
+      const { data, error } = await supabase.functions.invoke('smooth-worker', {
+        body: {
+          action: 'update_password',
+          email: email.trim(),
+          code,
+          newPassword,
+        },
+      });
+
       if (error) throw error;
 
       showAlert('Success', 'Password updated! Please sign in.', [
