@@ -53,13 +53,16 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   commentInput: { backgroundColor: c.input, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: c.text, minHeight: 80, textAlignVertical: 'top', marginBottom: 12 },
   submitButton: { backgroundColor: APP_COLORS.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   submitButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  existingReview: { backgroundColor: '#F0FDF4', borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#BBF7D0' },
-  existingReviewTitle: { fontSize: 14, fontWeight: '600', color: '#166534', marginBottom: 4 },
-  existingReviewStars: { flexDirection: 'row', gap: 2, marginBottom: 4 },
-  existingReviewComment: { fontSize: 14, color: '#15803D' },
-  existingReviewDate: { fontSize: 12, color: '#86EFAC', marginTop: 4 },
-  editButton: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, alignSelf: 'flex-end' },
-  editText: { fontSize: 13, fontWeight: '600', color: '#166534' },
+  existingReview: { backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border },
+  existingReviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  existingReviewBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  existingReviewBadgeText: { fontSize: 11, fontWeight: '600', color: '#92400E' },
+  existingReviewStars: { flexDirection: 'row', gap: 2, marginBottom: 8 },
+  existingReviewComment: { fontSize: 14, color: c.text, lineHeight: 20, fontStyle: 'italic' },
+  existingReviewDate: { fontSize: 12, color: c.textSecondary, marginTop: 8 },
+  editDivider: { height: 1, backgroundColor: c.border, marginVertical: 12 },
+  editLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' },
+  editLabelText: { fontSize: 12, fontWeight: '600', color: APP_COLORS.primary },
 });
 
 export default function ReviewScreen() {
@@ -272,25 +275,32 @@ export default function ReviewScreen() {
 
                   {existingReview && (
                     <View style={styles.existingReview}>
+                      <View style={styles.existingReviewHeader}>
+                        <View style={styles.existingReviewBadge}>
+                          <Ionicons name="time" size={12} color="#92400E" />
+                          <Text style={styles.existingReviewBadgeText}>Previous Review</Text>
+                        </View>
+                      </View>
                       <View style={styles.existingReviewStars}>
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Ionicons
                             key={star}
                             name={star <= existingReview.rating ? 'star' : 'star-outline'}
-                            size={16}
-                            color={star <= existingReview.rating ? '#166534' : '#86EFAC'}
+                            size={18}
+                            color={star <= existingReview.rating ? '#F59E0B' : '#D1D5DB'}
                           />
                         ))}
                       </View>
                       {existingReview.comment && (
-                        <Text style={styles.existingReviewComment}>{existingReview.comment}</Text>
+                        <Text style={styles.existingReviewComment}>"{existingReview.comment}"</Text>
                       )}
                       <Text style={styles.existingReviewDate}>
-                        Previous review • {new Date(existingReview.created_at).toLocaleDateString()}
+                        {new Date(existingReview.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </Text>
-                      <View style={styles.editButton}>
-                        <Ionicons name="pencil" size={14} color="#166534" />
-                        <Text style={styles.editText}>Editing previous review</Text>
+                      <View style={styles.editDivider} />
+                      <View style={styles.editLabel}>
+                        <Ionicons name="pencil" size={14} color={APP_COLORS.primary} />
+                        <Text style={styles.editLabelText}>Editing your review</Text>
                       </View>
                     </View>
                   )}
