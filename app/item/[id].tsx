@@ -148,12 +148,12 @@ export default function ItemDetailScreen() {
 
   useEffect(() => {
     const fetchReviews = async () => {
-      if (!item) return;
+      if (!params.id) return;
       try {
         const { data, error } = await supabase
           .from('reviews')
           .select('id, rating, comment, created_at, user_name')
-          .eq('menu_item_id', item.id)
+          .eq('menu_item_id', params.id)
           .order('created_at', { ascending: false })
           .limit(10);
 
@@ -170,7 +170,7 @@ export default function ItemDetailScreen() {
     };
 
     fetchReviews();
-  }, [item]);
+  }, [params.id]);
 
   useEffect(() => {
     const checkFavorite = async () => {
@@ -298,12 +298,14 @@ export default function ItemDetailScreen() {
           <View style={styles.reviewsSection}>
             <View style={styles.reviewsHeader}>
               <Text style={styles.sectionLabel}>Reviews</Text>
-              {reviews.length > 0 && (
+              {reviews.length > 0 ? (
                 <View style={styles.avgRating}>
                   <Ionicons name="star" size={18} color="#F59E0B" />
                   <Text style={styles.avgRatingValue}>{avgRating}</Text>
                   <Text style={styles.avgRatingCount}>({reviews.length})</Text>
                 </View>
+              ) : (
+                <ActivityIndicator size="small" color={colors.textSecondary} />
               )}
             </View>
 
