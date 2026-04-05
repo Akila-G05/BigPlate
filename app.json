@@ -48,8 +48,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "20457b40-d447-4e28-9eaa-4f30d5e4fea8"
+        "projectId": "e930bac4-c720-4759-b1c3-31be9b5e7d52"
       }
-    }
+    },
+    "owner": "akila_ya"
   }
 }

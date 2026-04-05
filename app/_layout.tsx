@@ -9,17 +9,17 @@ import { CartProvider } from "../src/context/CartContext";
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <PushNotificationProvider>
-        <ThemedAlertProvider>
-          <AuthProvider>
+      <ThemedAlertProvider>
+        <AuthProvider>
+          <PushNotificationProvider>
             <NotificationProvider>
               <CartProvider>
                 <Stack screenOptions={{ headerShown: false }} />
               </CartProvider>
             </NotificationProvider>
-          </AuthProvider>
-        </ThemedAlertProvider>
-      </PushNotificationProvider>
+          </PushNotificationProvider>
+        </AuthProvider>
+      </ThemedAlertProvider>
     </ThemeProvider>
   );
 }
