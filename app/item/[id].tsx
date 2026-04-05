@@ -299,6 +299,13 @@ export default function ItemDetailScreen() {
             </>
           )}
 
+          {item.is_new && (
+            <View style={styles.newBadgeInline}>
+              <Ionicons name="sparkles" size={16} color="#FFF" />
+              <Text style={styles.newTextInline}>New Item</Text>
+            </View>
+          )}
+
           <View style={styles.reviewsSection}>
             <View style={styles.reviewsHeader}>
               <Text style={styles.sectionLabel}>Reviews</Text>
@@ -344,13 +351,6 @@ export default function ItemDetailScreen() {
               </View>
             )}
           </View>
-
-          {item.is_new && (
-            <View style={styles.newBadgeInline}>
-              <Ionicons name="sparkles" size={16} color="#FFF" />
-              <Text style={styles.newTextInline}>New Item</Text>
-            </View>
-          )}
         </View>
       </ScrollView>
 
