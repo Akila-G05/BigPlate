@@ -293,12 +293,12 @@ export default function HomeScreen() {
           </View>
           <View style={styles.infoCard}>
             <Ionicons name="star" size={24} color={APP_COLORS.warning} />
-            <Text style={styles.infoValue}>{stats.avgRating}</Text>
-            <Text style={styles.infoLabel}>{stats.totalReviews} Reviews</Text>
+            <Text style={styles.infoValue}>4.9</Text>
+            <Text style={styles.infoLabel}>37.1K+ Reviews</Text>
           </View>
           <View style={styles.infoCard}>
             <Ionicons name="fast-food" size={24} color={APP_COLORS.success} />
-            <Text style={styles.infoValue}>{stats.totalItems}</Text>
+            <Text style={styles.infoValue}>250+</Text>
             <Text style={styles.infoLabel}>Menu Items</Text>
           </View>
         </View>
