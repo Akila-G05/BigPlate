@@ -202,11 +202,6 @@ export default function ProfileScreen() {
           )}
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="document-text" size={22} color={colors.textSecondary} />
-          <Text style={styles.menuItemText}>Terms & Privacy</Text>
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.branches}>

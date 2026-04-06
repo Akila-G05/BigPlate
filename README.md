@@ -7,13 +7,14 @@ A full-featured food delivery application for **Big Plate Restaurant** (Sri Lank
 ### 🔐 Authentication & Profile
 - **Sign Up / Login** – Full auth flow with Supabase Auth
 - **Forgot Password** – 3-step verification: Email → 6-digit Code → New Password
+- **Persistent Sessions** – User stays logged in across app restarts
 - **Profile Details** – Edit name/phone, disabled email field
 - **Address Management** – Add/edit/delete addresses, set default, city dropdown
 - **Sign Out / Delete Account** – Secure logout and data cleanup
 
 ### 🍔 Menu & Discovery
 - **Home Screen** – Hero banner, categories, trending items, promo banner, real stats
-- **Menu Screen** – Search, category filtering, pull-to-refresh, animations
+- **Menu Screen** – Search, category filtering, pull-to-refresh, staggered animations
 - **Item Details** – Full image, description, spice level, prep time, tags, favorites, reviews
 - **Favorites** – Save/remove dishes, synced to database
 
@@ -26,21 +27,25 @@ A full-featured food delivery application for **Big Plate Restaurant** (Sri Lank
 
 ### 📦 Orders & Tracking
 - **Order Placement** – Creates order + items + notification in DB
-- **Order History** – Active & past orders, expandable details, review button
+- **Order History** – Active & past orders, expandable details with smooth animations
 - **Status Tracking** – 5-step flow (Pending → Confirmed → Preparing → On the Way → Delivered)
 - **City-Based ETA** – Dynamic delivery time based on user's location
-- **Cancel Order** – Delete pending orders with confirmation
+- **Cancel Order** – Delete pending orders with loading animation
+- **Call Restaurant** – Direct dial to branch phone number
 
 ### ⭐ Reviews & Ratings
 - **Item Reviews** – Rate and review individual menu items
 - **Review Management** – Edit previous reviews, view average rating per item
 - **Public Reviews** – Visible to all users (guests included)
+- **Glass Effect UI** – Polished previous review display
 
 ### ⚙️ Settings & Preferences
-- **Dark Mode** – Full app theme support, persists across sessions
-- **Notification Toggles** – Push, Email, SMS (synced to database)
-- **Clear Cache** – Wipes local data and resets app state
+- **Dark Mode** – Full app theme support with loading overlay on toggle
+- **Notification Toggles** – Push, Email (synced to database)
+- **Location Services** – Real device permission handling via expo-location
+- **Clear Cache** – Wipes local data while preserving auth session
 - **Help / Support** – Contact info, rate app, help center
+- **Terms & Privacy** – Tabbed legal screen (Terms of Service / Privacy Policy)
 
 ### 🔔 Notifications
 - **In-App Bell** – Real-time unread count, mark as read, type-specific colors (Order/Promo/System)
@@ -48,11 +53,12 @@ A full-featured food delivery application for **Big Plate Restaurant** (Sri Lank
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** React Native (Expo), Expo Router
+- **Frontend:** React Native (Expo), Expo Router, TypeScript
 - **Backend:** Supabase (PostgreSQL, Auth, Edge Functions)
 - **State Management:** React Context
 - **Storage:** AsyncStorage (local), Supabase (cloud)
 - **Styling:** StyleSheet, ThemeContext (Dark Mode)
+- **Animations:** Animated API for smooth expand/collapse effects
 
 ## 📂 Project Structure
 
@@ -69,6 +75,7 @@ app/
   promotions/      # Deals & promo codes (Combos, Discounts, Free Delivery)
   notifications/   # In-app notifications
   settings/        # App settings & toggles
+  legal/           # Terms & Privacy screen
 
 src/
   context/         # Auth, Cart, Theme, Notifications, Push Notifications
