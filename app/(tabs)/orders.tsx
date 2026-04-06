@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
@@ -9,10 +9,31 @@ import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+// Animated expandable section component
+const AnimatedOrderDetails = ({ isExpanded, children }: { isExpanded: boolean; children: React.ReactNode }) => {
+  const anim = useRef(new Animated.Value(isExpanded ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: isExpanded ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [isExpanded]);
+
+  if (!isExpanded) return null;
+
+  return (
+    <Animated.View
+      style={{
+        opacity: anim,
+        transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [-15, 0] }) }],
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
+};
 
 type OrderStatus = { id: string; name: string; label: string; icon: string; sort_order: number };
 type OrderItem = { id: string; order_id: string; menu_item_id: string; name: string; quantity: number; price: number };
@@ -260,7 +281,7 @@ export default function OrdersScreen() {
                     </View>
                   </TouchableOpacity>
 
-                  {selectedOrder === order.id && (
+                  <AnimatedOrderDetails isExpanded={selectedOrder === order.id}>
                     <View style={styles.orderDetails}>
                       {order.order_items?.map((item) => (
                         <View key={item.id} style={styles.detailItem}>
@@ -315,7 +336,7 @@ export default function OrdersScreen() {
                         </TouchableOpacity>
                       )}
                     </View>
-                  )}
+                  </AnimatedOrderDetails>
                 </View>
               );
             })}
