@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useCart } from '../../src/context/CartContext';
+import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
 import { FoodImage } from '../../src/components/FoodImage';
@@ -63,6 +64,7 @@ export default function PromotionsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { addToCart } = useCart();
+  const { showAlert } = useThemedAlert();
   const [promos, setPromos] = useState<Promo[]>([]);
   const [loading, setLoading] = useState(true);
   const styles = createStyles(colors);
@@ -75,7 +77,7 @@ export default function PromotionsScreen() {
       if (items.length === 0) return;
 
       items.forEach((item) => addToCart(item));
-      Alert.alert('Combo Added!', `${items.length} items added to your cart.`, [
+      showAlert('Combo Added!', `${items.length} items added to your cart.`, [
         { text: 'OK', onPress: () => router.push('/checkout') },
       ]);
     } else {
