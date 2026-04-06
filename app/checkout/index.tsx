@@ -227,19 +227,24 @@ export default function CheckoutScreen() {
       const eligibleItemIds = promo.promo_items?.map((pi: any) => pi.menu_item_id) || [];
       let discountAmount = 0;
       let freeDelivery = false;
+      const promoType = promo.type || 'item_discount'; // Fallback if type is missing
 
-      if (promo.type === 'free_delivery') {
+      console.log('Promo Type:', promoType, 'Eligible Items:', eligibleItemIds);
+
+      if (promoType === 'free_delivery') {
         freeDelivery = true;
         setDeliveryFee(0);
         discountAmount = 0;
-      } else if (promo.type === 'item_discount') {
+      } else if (promoType === 'item_discount') {
         // Reset delivery fee if it was previously free
         setDeliveryFee(originalDeliveryFee);
 
         // Only discount eligible items
         if (eligibleItemIds.length > 0) {
           const cartItemIds = items.map((i) => i.menu_item.id);
+          console.log('Cart Item IDs:', cartItemIds);
           const hasEligibleItem = cartItemIds.some((id) => eligibleItemIds.includes(id));
+          
           if (!hasEligibleItem) {
             setPromoError('This promo code doesn\'t apply to items in your cart');
             setPromoLoading(false);
@@ -250,14 +255,49 @@ export default function CheckoutScreen() {
               discountAmount += item.menu_item.price * item.quantity * (promo.discount / 100);
             }
           });
+          console.log('Discount Amount:', discountAmount);
         } else {
           // Discount applies to entire order
           discountAmount = total * (promo.discount / 100);
         }
-      } else if (promo.type === 'combo') {
-        setPromoError('Combo deals must be added from the Promotions screen.');
-        setPromoLoading(false);
-        return;
+      } else if (promoType === 'combo') {
+        // Reset delivery fee if it was previously free
+        setDeliveryFee(originalDeliveryFee);
+
+        if (!promo.combo_price) {
+          setPromoError('Invalid combo configuration.');
+          setPromoLoading(false);
+          return;
+        }
+
+        // Check if cart contains ALL required items
+        const cartItemIds = items.map((i) => i.menu_item.id);
+        const missingItems = eligibleItemIds.filter(id => !cartItemIds.includes(id));
+
+        if (missingItems.length > 0) {
+          setPromoError('Please add all required combo items to your cart.');
+          setPromoLoading(false);
+          return;
+        }
+
+        // Calculate sum of required items in cart
+        let requiredItemsTotal = 0;
+        items.forEach(item => {
+          if (eligibleItemIds.includes(item.menu_item.id)) {
+            requiredItemsTotal += item.menu_item.price * item.quantity;
+          }
+        });
+
+        // Discount is the difference between individual prices and combo price
+        const discount = requiredItemsTotal - promo.combo_price;
+        
+        if (discount > 0) {
+          discountAmount = discount;
+        } else {
+          setPromoError('Cart total for combo items is less than combo price.');
+          setPromoLoading(false);
+          return;
+        }
       }
 
       setAppliedPromo({

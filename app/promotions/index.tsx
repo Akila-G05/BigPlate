@@ -68,6 +68,7 @@ export default function PromotionsScreen() {
   const styles = createStyles(colors);
 
   const handlePromoAction = async (promo: Promo) => {
+    console.log('Promo Type:', promo.type, 'Promo:', promo);
     if (promo.type === 'combo') {
       // Add all combo items to cart and go to checkout
       const items = promo.promo_items?.map((pi) => pi.menu_items).filter(Boolean) || [];
