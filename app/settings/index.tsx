@@ -244,6 +244,16 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
+          <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/legal/terms-privacy')}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="document-text" size={22} color={colors.textSecondary} />
+              <View style={styles.settingText}>
+                <Text style={styles.settingLabel}>Terms & Privacy</Text>
+                <Text style={styles.settingDesc}>Terms of Service and Privacy Policy</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.settingItem} onPress={handleHelpCenter}>
             <View style={styles.settingLeft}>
               <Ionicons name="help-circle" size={22} color={colors.textSecondary} />
