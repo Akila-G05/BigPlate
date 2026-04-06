@@ -231,10 +231,7 @@ export default function OrdersScreen() {
               const currentStatusSort = order.order_statuses?.sort_order || 1;
               return (
                 <View key={order.id} style={{ marginBottom: 16 }}>
-                  <TouchableOpacity style={styles.activeOrderCard} onPress={() => {
-                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                    setSelectedOrder(selectedOrder === order.id ? null : order.id);
-                  }}>
+                  <TouchableOpacity style={styles.activeOrderCard} onPress={() => setSelectedOrder(selectedOrder === order.id ? null : order.id)}>
                     <View style={styles.activeOrderHeader}>
                       <View>
                         <Text style={styles.activeOrderId}>#{order.id.slice(0, 8)}</Text>
