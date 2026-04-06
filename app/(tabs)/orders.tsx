@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Animated, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { APP_COLORS } from '../../src/constants';
+import { APP_COLORS, BRANCHES } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useThemedAlert } from '../../src/context/ThemedAlertContext';
@@ -127,6 +127,12 @@ export default function OrdersScreen() {
   const [deliveryTimes, setDeliveryTimes] = useState<Record<string, number>>({});
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const styles = createStyles(colors);
+
+  const handleCallRestaurant = (branchName: string) => {
+    const branch = BRANCHES.find((b) => b.name === branchName);
+    const phoneNumber = branch?.phone || '+94770359400';
+    Linking.openURL(`tel:${phoneNumber}`);
+  };
 
   const fetchData = async () => {
     if (!user) { setLoading(false); return; }
@@ -290,7 +296,7 @@ export default function OrdersScreen() {
                         <Text style={styles.detailTotalLabel}>Total</Text>
                         <Text style={styles.detailTotalValue}>Rs. {order.total.toLocaleString()}</Text>
                       </View>
-                      <TouchableOpacity style={styles.callButton}>
+                      <TouchableOpacity style={styles.callButton} onPress={() => handleCallRestaurant(order.branch)}>
                         <Ionicons name="call" size={18} color="#FFF" />
                         <Text style={styles.callButtonText}>Call Restaurant</Text>
                       </TouchableOpacity>

@@ -16,14 +16,12 @@ const SETTINGS_KEY = 'bigplate_settings';
 interface Settings {
   pushNotifs: boolean;
   emailNotifs: boolean;
-  smsNotifs: boolean;
   locationServices: boolean;
 }
 
 const DEFAULT_SETTINGS: Settings = {
   pushNotifs: true,
   emailNotifs: false,
-  smsNotifs: false,
   locationServices: true,
 };
 
@@ -42,6 +40,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   settingDesc: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
   dangerItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14 },
   versionText: { textAlign: 'center', fontSize: 13, color: c.textSecondary, paddingVertical: 20 },
+  themeOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', gap: 12 },
+  themeOverlayText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
 });
 
 export default function SettingsScreen() {
@@ -51,6 +51,13 @@ export default function SettingsScreen() {
   const { showAlert } = useThemedAlert();
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(false);
+  const [themeChanging, setThemeChanging] = useState(false);
+
+  const handleThemeToggle = () => {
+    setThemeChanging(true);
+    toggleTheme();
+    setTimeout(() => setThemeChanging(false), 800);
+  };
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -65,7 +72,6 @@ export default function SettingsScreen() {
             setSettings({
               pushNotifs: dbData.push_notifications ?? true,
               emailNotifs: dbData.email_notifications ?? false,
-              smsNotifs: dbData.sms_notifications ?? false,
               locationServices: localData?.locationServices ?? true,
             });
           } else if (localData) {
@@ -88,7 +94,7 @@ export default function SettingsScreen() {
 
     // Save to database if logged in
     if (user) {
-      const dbKey = key === 'pushNotifs' ? 'push_notifications' : key === 'emailNotifs' ? 'email_notifications' : 'sms_notifications';
+      const dbKey = key === 'pushNotifs' ? 'push_notifications' : 'email_notifications';
       await supabase.from('users').update({ [dbKey]: value }).eq('id', user.id);
     }
   }, [settings, user]);
@@ -175,20 +181,10 @@ export default function SettingsScreen() {
               <Ionicons name="mail" size={22} color={APP_COLORS.primary} />
               <View style={styles.settingText}>
                 <Text style={styles.settingLabel}>Email Notifications</Text>
-                <Text style={styles.settingDesc}>Receive order updates via email</Text>
+                <Text style={styles.settingDesc}>Upcoming: Receive order updates via email</Text>
               </View>
             </View>
             <Switch value={settings.emailNotifs} onValueChange={(v) => saveSetting('emailNotifs', v)} trackColor={{ true: APP_COLORS.primary }} />
-          </View>
-          <View style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <Ionicons name="chatbubble" size={22} color={APP_COLORS.primary} />
-              <View style={styles.settingText}>
-                <Text style={styles.settingLabel}>SMS Notifications</Text>
-                <Text style={styles.settingDesc}>Get text messages for order updates</Text>
-              </View>
-            </View>
-            <Switch value={settings.smsNotifs} onValueChange={(v) => saveSetting('smsNotifs', v)} trackColor={{ true: APP_COLORS.primary }} />
           </View>
         </View>
 
@@ -202,7 +198,7 @@ export default function SettingsScreen() {
                 <Text style={styles.settingDesc}>Switch to dark theme</Text>
               </View>
             </View>
-            <Switch value={isDark} onValueChange={toggleTheme} trackColor={{ true: APP_COLORS.primary }} />
+            <Switch value={isDark} onValueChange={handleThemeToggle} trackColor={{ true: APP_COLORS.primary }} />
           </View>
         </View>
 
@@ -296,6 +292,13 @@ export default function SettingsScreen() {
 
         <Text style={styles.versionText}>Big Plate v{Application.nativeAppVersion || '1.0.0'}</Text>
       </ScrollView>
+
+      {themeChanging && (
+        <View style={styles.themeOverlay}>
+          <ActivityIndicator size="large" color={APP_COLORS.primary} />
+          <Text style={styles.themeOverlayText}>Updating theme...</Text>
+        </View>
+      )}
     </View>
   );
 }
