@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
+import * as Location from 'expo-location';
 import { APP_COLORS } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
@@ -65,23 +66,29 @@ export default function SettingsScreen() {
       const data = await AsyncStorage.getItem(SETTINGS_KEY);
       if (data) localData = JSON.parse(data);
 
+      // Check actual device location permission
+      const { status } = await Location.getForegroundPermissionsAsync();
+      const isLocationEnabled = status === 'granted';
+
       if (user) {
         try {
-          const { data: dbData } = await supabase.from('users').select('push_notifications, email_notifications, sms_notifications').eq('id', user.id).single();
+          const { data: dbData } = await supabase.from('users').select('push_notifications, email_notifications').eq('id', user.id).single();
           if (dbData) {
             setSettings({
               pushNotifs: dbData.push_notifications ?? true,
               emailNotifs: dbData.email_notifications ?? false,
-              locationServices: localData?.locationServices ?? true,
+              locationServices: isLocationEnabled,
             });
           } else if (localData) {
-            setSettings(localData);
+            setSettings({ ...localData, locationServices: isLocationEnabled });
           }
         } catch {
-          if (localData) setSettings(localData);
+          if (localData) setSettings({ ...localData, locationServices: isLocationEnabled });
         }
       } else if (localData) {
-        setSettings(localData);
+        setSettings({ ...localData, locationServices: isLocationEnabled });
+      } else {
+        setSettings({ ...DEFAULT_SETTINGS, locationServices: isLocationEnabled });
       }
     };
     loadSettings();
@@ -96,6 +103,25 @@ export default function SettingsScreen() {
     if (user) {
       const dbKey = key === 'pushNotifs' ? 'push_notifications' : 'email_notifications';
       await supabase.from('users').update({ [dbKey]: value }).eq('id', user.id);
+    }
+
+    // Handle location services
+    if (key === 'locationServices') {
+      if (value) {
+        // Request permission
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setSettings((prev) => ({ ...prev, locationServices: false }));
+          showAlert('Permission Denied', 'Location permission is required to use this feature. Please enable it in your device settings.', [
+            { text: 'OK' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]);
+        }
+      } else {
+        // Note: We can't programmatically revoke location permissions on mobile
+        // We just update the local state and inform the user
+        showAlert('Location Services', 'To fully disable location, please turn it off in your device settings.', [{ text: 'OK' }]);
+      }
     }
   }, [settings, user]);
 
