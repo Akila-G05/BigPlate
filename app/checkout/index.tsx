@@ -264,6 +264,12 @@ export default function CheckoutScreen() {
         // Reset delivery fee if it was previously free
         setDeliveryFee(originalDeliveryFee);
 
+        if (eligibleItemIds.length === 0) {
+          setPromoError('This combo has no items configured.');
+          setPromoLoading(false);
+          return;
+        }
+
         // Check if cart contains ALL required items
         const cartItemIds = items.map((i) => i.menu_item.id);
         const missingItems = eligibleItemIds.filter(id => !cartItemIds.includes(id));
@@ -274,7 +280,7 @@ export default function CheckoutScreen() {
           return;
         }
 
-        // Calculate sum of eligible items in cart
+        // Calculate sum of eligible items in cart ONLY
         let eligibleTotal = 0;
         items.forEach(item => {
           if (eligibleItemIds.includes(item.menu_item.id)) {
@@ -282,7 +288,7 @@ export default function CheckoutScreen() {
           }
         });
 
-        // Apply percentage discount to the eligible items total
+        // Apply percentage discount ONLY to the eligible items total
         if (promo.discount > 0) {
           discountAmount = eligibleTotal * (promo.discount / 100);
         }
@@ -581,12 +587,31 @@ export default function CheckoutScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Order Summary</Text>
-          {items.map((item) => (
-            <View key={item.menu_item.id} style={styles.summaryItem}>
-              <Text style={styles.summaryItemName}>{item.menu_item.name} x{item.quantity}</Text>
-              <Text style={styles.summaryItemPrice}>Rs. {(item.menu_item.price * item.quantity).toLocaleString()}</Text>
-            </View>
-          ))}
+          {items.map((item) => {
+            const isEligible = appliedPromo?.eligibleItemIds?.includes(item.menu_item.id);
+            const originalPrice = item.menu_item.price * item.quantity;
+            const discountedPrice = isEligible ? originalPrice - (originalPrice * appliedPromo.discount / 100) : originalPrice;
+
+            return (
+              <View key={item.menu_item.id} style={styles.summaryItem}>
+                <Text style={styles.summaryItemName}>{item.menu_item.name} x{item.quantity}</Text>
+                <View style={{ alignItems: 'flex-end' }}>
+                  {isEligible && discount > 0 ? (
+                    <>
+                      <Text style={[styles.summaryItemPrice, { textDecorationLine: 'line-through', color: colors.textSecondary, fontSize: 12 }]}>
+                        Rs. {originalPrice.toLocaleString()}
+                      </Text>
+                      <Text style={[styles.summaryItemPrice, { color: APP_COLORS.success }]}>
+                        Rs. {Math.round(discountedPrice).toLocaleString()}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={styles.summaryItemPrice}>Rs. {originalPrice.toLocaleString()}</Text>
+                  )}
+                </View>
+              </View>
+            );
+          })}
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
             <Text style={styles.summaryValue}>Rs. {total.toLocaleString()}</Text>
