@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_COLORS } from '../../src/constants';
@@ -8,6 +8,11 @@ import { useTheme } from '../../src/context/ThemeContext';
 import { useThemedAlert } from '../../src/context/ThemedAlertContext';
 import type { ThemeColors } from '../../src/context/ThemeContext';
 import { supabase } from '../../src/lib/supabaseClient';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type OrderStatus = { id: string; name: string; label: string; icon: string; sort_order: number };
 type OrderItem = { id: string; order_id: string; menu_item_id: string; name: string; quantity: number; price: number };
@@ -205,7 +210,10 @@ export default function OrdersScreen() {
               const currentStatusSort = order.order_statuses?.sort_order || 1;
               return (
                 <View key={order.id} style={{ marginBottom: 16 }}>
-                  <TouchableOpacity style={styles.activeOrderCard} onPress={() => setSelectedOrder(selectedOrder === order.id ? null : order.id)}>
+                  <TouchableOpacity style={styles.activeOrderCard} onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setSelectedOrder(selectedOrder === order.id ? null : order.id);
+                  }}>
                     <View style={styles.activeOrderHeader}>
                       <View>
                         <Text style={styles.activeOrderId}>#{order.id.slice(0, 8)}</Text>
