@@ -150,7 +150,7 @@ export default function ProfileScreen() {
   }
 
   const displayName = userName || user.user_metadata?.name || user.email?.split('@')[0] || 'User';
-  const displayEmail = user.email || '';
+    const displayEmail = user.email || '';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
