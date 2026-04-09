@@ -116,14 +116,11 @@ export default function SignupScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
 
-        <View style={styles.header}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&h=200&fit=crop' }}
-            style={styles.logoImage}
-          />
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join Big Plate for delicious food delivery</Text>
-        </View>
+         <View style={styles.header}>
+           <Ionicons name="person-circle-outline" size={80} color={colors.textSecondary} />
+           <Text style={styles.title}>Create Account</Text>
+           <Text style={styles.subtitle}>Join Big Plate for delicious food delivery</Text>
+         </View>
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>

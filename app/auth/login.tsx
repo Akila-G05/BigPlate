@@ -115,14 +115,11 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         {/* Logo */}
-        <View style={styles.header}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&h=200&fit=crop' }}
-            style={styles.logoImage}
-          />
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to your Big Plate account</Text>
-        </View>
+         <View style={styles.header}>
+           <Ionicons name="person-circle-outline" size={80} color={colors.textSecondary} />
+           <Text style={styles.title}>Welcome Back</Text>
+           <Text style={styles.subtitle}>Sign in to your Big Plate account</Text>
+         </View>
 
         {/* Form */}
         <View style={styles.form}>
