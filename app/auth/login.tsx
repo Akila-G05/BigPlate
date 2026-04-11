@@ -73,12 +73,13 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const { colors } = useTheme();
   const { showAlert } = useThemedAlert();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const styles = createStyles(colors);
 
@@ -100,6 +101,18 @@ export default function LoginScreen() {
       showAlert('Login Failed', error.message || 'Invalid email or password');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      showAlert('Google Sign-In Failed', error.message || 'Could not sign in with Google');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -183,9 +196,19 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          <TouchableOpacity style={styles.socialButton}>
-            <Ionicons name="logo-google" size={20} color="#EA4335" />
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
+          <TouchableOpacity 
+            style={[styles.socialButton, googleLoading && styles.loginButtonDisabled]} 
+            onPress={handleGoogleSignIn}
+            disabled={googleLoading}
+          >
+            {googleLoading ? (
+              <Text style={styles.socialButtonText}>Signing in...</Text>
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={20} color="#EA4335" />
+                <Text style={styles.socialButtonText}>Continue with Google</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <View style={styles.signupPrompt}>
