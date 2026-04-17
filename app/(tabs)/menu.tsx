@@ -198,7 +198,7 @@ export default function MenuScreen() {
     try {
       const [catsRes, itemsRes] = await Promise.all([
         supabase.from("categories").select("*").order("sort_order", { ascending: true }),
-        supabase.from("menu_items").select("*").eq("is_available", true).order("sort_order", { ascending: true }),
+        supabase.from("menu_items").select("*").eq("is_available", true).order("sort_order", { ascending: true }).limit(50),
       ]);
       if (catsRes.data) setCategories(catsRes.data);
       if (itemsRes.data) setMenuItems(itemsRes.data);
