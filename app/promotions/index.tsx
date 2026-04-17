@@ -89,10 +89,12 @@ export default function PromotionsScreen() {
   useEffect(() => {
     const fetchPromos = async () => {
       try {
+        const today = new Date().toISOString();
         const { data, error } = await supabase
           .from('promotions')
           .select('*, promo_items(menu_items(id, name, image, price))')
           .eq('is_active', true)
+          .gte('valid_until', today)
           .order('created_at', { ascending: false });
 
         if (error) throw error;

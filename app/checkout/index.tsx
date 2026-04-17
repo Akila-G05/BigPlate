@@ -204,15 +204,17 @@ export default function CheckoutScreen() {
     setPromoError('');
 
     try {
+      const today = new Date().toISOString();
       const { data: promo, error } = await supabase
         .from('promotions')
         .select('*, promo_items(menu_item_id)')
         .eq('code', promoCode.toUpperCase().trim())
         .eq('is_active', true)
+        .gte('valid_until', today)
         .single();
 
       if (error || !promo) {
-        setPromoError('Invalid promo code');
+        setPromoError('Invalid or expired promo code');
         setPromoLoading(false);
         return;
       }
