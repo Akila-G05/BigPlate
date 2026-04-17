@@ -196,7 +196,7 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          <TouchableOpacity 
+          {/* <TouchableOpacity 
             style={[styles.socialButton, googleLoading && styles.loginButtonDisabled]} 
             onPress={handleGoogleSignIn}
             disabled={googleLoading}
@@ -209,7 +209,7 @@ export default function LoginScreen() {
                 <Text style={styles.socialButtonText}>Continue with Google</Text>
               </>
             )}
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <View style={styles.signupPrompt}>
             <Text style={styles.signupText}>Don't have an account? </Text>
