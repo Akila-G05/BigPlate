@@ -229,9 +229,7 @@ export default function CheckoutScreen() {
       const eligibleItemIds = promo.promo_items?.map((pi: any) => pi.menu_item_id) || [];
       let discountAmount = 0;
       let freeDelivery = false;
-      const promoType = promo.type || 'item_discount'; // Fallback if type is missing
-
-      console.log('Promo Type:', promoType, 'Eligible Items:', eligibleItemIds);
+      const promoType = promo.type || 'item_discount';
 
       if (promoType === 'free_delivery') {
         freeDelivery = true;
@@ -244,7 +242,6 @@ export default function CheckoutScreen() {
         // Only discount eligible items
         if (eligibleItemIds.length > 0) {
           const cartItemIds = items.map((i) => i.menu_item.id);
-          console.log('Cart Item IDs:', cartItemIds);
           const hasEligibleItem = cartItemIds.some((id) => eligibleItemIds.includes(id));
           
           if (!hasEligibleItem) {
@@ -257,7 +254,6 @@ export default function CheckoutScreen() {
               discountAmount += item.menu_item.price * item.quantity * (promo.discount / 100);
             }
           });
-          console.log('Discount Amount:', discountAmount);
         } else {
           // Discount applies to entire order
           discountAmount = total * (promo.discount / 100);
