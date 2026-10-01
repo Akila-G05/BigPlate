@@ -96,7 +96,7 @@ src/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Akila-G05/big-plate.git
+   git clone https://github.com/Akila-G05/BigPlate.git
    cd big-plate
    ```
 
@@ -193,4 +193,4 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## 📄 License
 
-MIT — see [LICENSE](LICENSE).
+This project is private and proprietary.
