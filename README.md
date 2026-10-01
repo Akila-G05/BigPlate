@@ -97,7 +97,7 @@ src/
 1. **Clone the repository**
    ```bash
    git clone https://github.com/Akila-G05/BigPlate.git
-   cd big-plate
+   cd BigPlate
    ```
 
 2. **Install dependencies**
